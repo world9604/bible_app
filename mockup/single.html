@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordCard — 폰트 단일 미리보기</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <style>
+    @font-face {
+        font-family: 'Bookk Myungjo';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/BookkMyungjo-Lt.woff2') format('woff2');
+        font-weight: 400;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Bookk Myungjo';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/BookkMyungjo-Bd.woff2') format('woff2');
+        font-weight: 700;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Prestige Elite Std';
+        font-style: normal;
+        font-weight: 700;
+        src: url('https://fonts.cdnfonts.com/s/14163/PrestigeEliteStd-Bd.woff') format('woff');
+        font-display: swap;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0; padding: 0;
+        background: #FAFAF7;
+        color: #1A1A1A;
+        font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .phone {
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .topbar {
+        display: flex;
+        align-items: center;
+        padding: 28px 32px 18px;
+    }
+    .topbar .book {
+        font-size: 19px; font-weight: 500; letter-spacing: 0.2px;
+        color: #1A1A1A;
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    }
+    .topbar .chapter {
+        margin-left: 12px;
+        font-size: 15px; color: #8A8A85; letter-spacing: 0.3px;
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    }
+    .topbar .spacer { flex: 1; }
+    .topbar .settings {
+        font-size: 19px; color: #8A8A85; font-weight: 500;
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    }
+
+    .body {
+        flex: 1;
+        padding: 6px 32px 32px;
+    }
+    .verse {
+        margin: 0;
+        padding: 6px 0;
+        font-size: 19px;
+        line-height: 1.9;
+        letter-spacing: -0.1px;
+        color: #1A1A1A;
+    }
+    .verse + .verse { margin-top: 8px; }
+    .verse .num {
+        font-family: 'Prestige Elite Std', 'Courier Prime', monospace;
+        font-size: 12px;
+        color: #B8B5AE;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        vertical-align: super;
+        margin-right: 7px;
+    }
+
+    .footer {
+        display: flex; justify-content: space-between;
+        padding: 16px 36px 32px;
+        font-size: 14px; color: #8A8A85; letter-spacing: 0.3px;
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    }
+
+    .label {
+        position: fixed;
+        bottom: 0; left: 0;
+        background: #1A1A1A; color: #FAFAF7;
+        font-size: 11px; letter-spacing: 0.5px;
+        padding: 8px 14px;
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+        font-weight: 500;
+        z-index: 10;
+    }
+
+    body[data-font="bookk"] .verse { font-family: 'Bookk Myungjo', 'Nanum Myeongjo', serif; font-size: 20px; }
+    body[data-font="nanum"] .verse { font-family: 'Nanum Myeongjo', serif; font-size: 20px; }
+    body[data-font="bongothic"] .verse { font-family: 'Noto Sans KR', sans-serif; font-weight: 400; font-size: 18px; line-height: 1.95; }
+    body[data-font="pretendard"] .verse { font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-weight: 400; font-size: 17.5px; line-height: 1.95; letter-spacing: -0.2px; }
+    </style>
+</head>
+<body>
+    <div class="label" id="label"></div>
+    <div class="phone">
+        <div class="topbar">
+            <span class="book">창세기</span>
+            <span class="chapter">1</span>
+            <span class="spacer"></span>
+            <span class="settings">Aa</span>
+        </div>
+        <div class="body">
+            <p class="verse"><span class="num">1</span>태초에 하나님이 천지를 창조하시니라.</p>
+            <p class="verse"><span class="num">2</span>땅이 혼돈하고 공허하며 흑암이 깊음 위에 있고 하나님의 영은 수면 위에 운행하시니라.</p>
+            <p class="verse"><span class="num">3</span>하나님이 이르시되 빛이 있으라 하시니 빛이 있었고</p>
+            <p class="verse"><span class="num">4</span>빛이 하나님이 보시기에 좋았더라 하나님이 빛과 어둠을 나누사</p>
+            <p class="verse"><span class="num">5</span>하나님이 빛을 낮이라 부르시고 어둠을 밤이라 부르시니라 저녁이 되고 아침이 되니 이는 첫째 날이니라.</p>
+            <p class="verse"><span class="num">6</span>하나님이 이르시되 물 가운데에 궁창이 있어 물과 물로 나뉘라 하시고</p>
+            <p class="verse"><span class="num">7</span>하나님이 궁창을 만드사 궁창 아래의 물과 궁창 위의 물로 나뉘게 하시니 그대로 되니라.</p>
+        </div>
+        <div class="footer">
+            <span>‹ 이전</span>
+            <span>다음 ›</span>
+        </div>
+    </div>
+    <script>
+        const params = new URLSearchParams(location.search);
+        const f = params.get('f') || 'bookk';
+        document.body.dataset.font = f;
+        const labels = {
+            bookk: '부크크 명조 · Bookk Myungjo',
+            nanum: '나눔명조 · Nanum Myeongjo',
+            bongothic: '본고딕 · Source Han Sans',
+            pretendard: '프리텐다드 · Pretendard',
+        };
+        document.getElementById('label').textContent = labels[f] || f;
+    </script>
+</body>
+</html>

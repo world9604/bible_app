@@ -6,9 +6,12 @@ package com.wordcard.app.presentation.common
  */
 object AppGlyphs {
     const val Share = "↗"
-    const val Close = "✕"
-    const val Settings = "⚙"
+    const val Close = "×"
+    const val Settings = "Aa"
     const val ChevronLeft = "‹"
     const val ChevronRight = "›"
     const val Check = "✓"
+
+    /** Material Symbols Outlined `arrow_back` (U+E5C4) — uses iconFontFamily */
+    const val Back = ""
 }

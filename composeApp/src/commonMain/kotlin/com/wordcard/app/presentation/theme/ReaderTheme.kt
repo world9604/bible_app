@@ -2,6 +2,7 @@ package com.wordcard.app.presentation.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -23,33 +24,33 @@ data class ReaderColors(
 )
 
 internal val LightReaderColors = ReaderColors(
-    background = Color(0xFFFBF9F4),
+    background = Color(0xFFFFFFFF),
     surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF1F1B16),
-    onSurfaceMuted = Color(0xFF6B6358),
-    accent = Color(0xFFB07A3B),
-    verseNumber = Color(0xFFB6A98F),
-    selection = Color(0xFFFCE9C7),
+    onSurface = Color(0xFF1A1A1A),
+    onSurfaceMuted = Color(0xFF8A8A85),
+    accent = Color(0xFF1A1A1A),
+    verseNumber = Color(0xFF74A62E),
+    selection = Color(0xFFF1F1EC),
 )
 
 internal val DarkReaderColors = ReaderColors(
-    background = Color(0xFF14110E),
-    surface = Color(0xFF1C1814),
-    onSurface = Color(0xFFECE5D8),
-    onSurfaceMuted = Color(0xFF9A9080),
-    accent = Color(0xFFE0B97D),
-    verseNumber = Color(0xFF6E6354),
-    selection = Color(0xFF3A2E1B),
+    background = Color(0xFF111111),
+    surface = Color(0xFF111111),
+    onSurface = Color(0xFFE6E4DE),
+    onSurfaceMuted = Color(0xFF7A7872),
+    accent = Color(0xFFE6E4DE),
+    verseNumber = Color(0xFF4A4845),
+    selection = Color(0xFF24221F),
 )
 
 internal val SepiaReaderColors = ReaderColors(
-    background = Color(0xFFF4ECD8),
-    surface = Color(0xFFFAF3E0),
-    onSurface = Color(0xFF5B4636),
-    onSurfaceMuted = Color(0xFF8A765C),
-    accent = Color(0xFF8C5A2B),
-    verseNumber = Color(0xFFB99E78),
-    selection = Color(0xFFE6CFA1),
+    background = Color(0xFFF4ECDC),
+    surface = Color(0xFFF4ECDC),
+    onSurface = Color(0xFF2D2620),
+    onSurfaceMuted = Color(0xFF9A8A75),
+    accent = Color(0xFF2D2620),
+    verseNumber = Color(0xFFC0AE92),
+    selection = Color(0xFFE5DBC2),
 )
 
 val LocalReaderColors = staticCompositionLocalOf { LightReaderColors }
@@ -83,10 +84,29 @@ fun WordCardTheme(
         )
     }
 
+    val baseTypography = Typography()
+    val materialTypography = Typography(
+        displayLarge = baseTypography.displayLarge.copy(fontFamily = typography.fontFamily),
+        displayMedium = baseTypography.displayMedium.copy(fontFamily = typography.fontFamily),
+        displaySmall = baseTypography.displaySmall.copy(fontFamily = typography.fontFamily),
+        headlineLarge = baseTypography.headlineLarge.copy(fontFamily = typography.fontFamily),
+        headlineMedium = baseTypography.headlineMedium.copy(fontFamily = typography.fontFamily),
+        headlineSmall = baseTypography.headlineSmall.copy(fontFamily = typography.fontFamily),
+        titleLarge = baseTypography.titleLarge.copy(fontFamily = typography.fontFamily),
+        titleMedium = baseTypography.titleMedium.copy(fontFamily = typography.fontFamily),
+        titleSmall = baseTypography.titleSmall.copy(fontFamily = typography.fontFamily),
+        bodyLarge = baseTypography.bodyLarge.copy(fontFamily = typography.fontFamily),
+        bodyMedium = baseTypography.bodyMedium.copy(fontFamily = typography.fontFamily),
+        bodySmall = baseTypography.bodySmall.copy(fontFamily = typography.fontFamily),
+        labelLarge = baseTypography.labelLarge.copy(fontFamily = typography.fontFamily),
+        labelMedium = baseTypography.labelMedium.copy(fontFamily = typography.fontFamily),
+        labelSmall = baseTypography.labelSmall.copy(fontFamily = typography.fontFamily),
+    )
+
     CompositionLocalProvider(
         LocalReaderColors provides readerColors,
         LocalReaderTypography provides typography,
     ) {
-        MaterialTheme(colorScheme = colorScheme, content = content)
+        MaterialTheme(colorScheme = colorScheme, typography = materialTypography, content = content)
     }
 }

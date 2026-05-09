@@ -5,6 +5,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,9 +66,8 @@ fun ReaderScreen(
             ReaderTopBar(
                 bookName = state.currentBook?.name ?: "",
                 chapter = state.currentChapter?.number,
-                onBookClick = viewModel::openBookPicker,
-                onChapterClick = viewModel::openChapterPicker,
-                onSettings = onOpenSettings,
+                onBack = viewModel::openBookPicker,
+                onTitleClick = viewModel::openChapterPicker,
             )
 
             Box(modifier = Modifier.fillMaxSize()) {
@@ -87,17 +88,18 @@ fun ReaderScreen(
                     }
                 }
 
-                AnimatedVisibility(
-                    visible = state.hasSelection,
-                    enter = slideInVertically(initialOffsetY = { it }),
-                    exit = slideOutVertically(targetOffsetY = { it }),
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                ) {
-                    SelectionActionBar(
-                        count = state.selectedVerseNumbers.size,
-                        onClear = viewModel::clearSelection,
-                        onShare = viewModel::openShareCard,
-                    )
+                Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+                    AnimatedVisibility(
+                        visible = state.hasSelection,
+                        enter = slideInVertically(initialOffsetY = { it }),
+                        exit = slideOutVertically(targetOffsetY = { it }),
+                    ) {
+                        SelectionActionBar(
+                            count = state.selectedVerseNumbers.size,
+                            onClear = viewModel::clearSelection,
+                            onShare = viewModel::openShareCard,
+                        )
+                    }
                 }
             }
         }
@@ -137,55 +139,40 @@ fun ReaderScreen(
 private fun ReaderTopBar(
     bookName: String,
     chapter: Int?,
-    onBookClick: () -> Unit,
-    onChapterClick: () -> Unit,
-    onSettings: () -> Unit,
+    onBack: () -> Unit,
+    onTitleClick: () -> Unit,
 ) {
     val colors = LocalReaderColors.current
+    val typo = LocalReaderTypography.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(start = 56.dp, end = 56.dp, top = 50.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PillButton(text = bookName.ifBlank { "책 선택" }, onClick = onBookClick, emphasized = true)
-        Spacer(Modifier.width(8.dp))
-        PillButton(text = chapter?.let { "${it}장" } ?: "-", onClick = onChapterClick)
+        Text(
+            text = AppGlyphs.Back,
+            style = typo.icon,
+            color = colors.onSurface,
+            modifier = Modifier
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                ) { onBack() },
+        )
         Spacer(Modifier.weight(1f))
-        Surface(
-            color = colors.surface,
-            shape = RoundedCornerShape(50),
-            modifier = Modifier.clickable { onSettings() },
-        ) {
+        if (bookName.isNotBlank() && chapter != null) {
             Text(
-                text = AppGlyphs.Settings,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                color = colors.onSurfaceMuted,
-                fontSize = 18.sp,
+                text = "$bookName ${chapter}장",
+                style = typo.topBar,
+                color = colors.onSurface,
+                modifier = Modifier
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) { onTitleClick() },
             )
         }
-    }
-}
-
-@Composable
-private fun PillButton(
-    text: String,
-    onClick: () -> Unit,
-    emphasized: Boolean = false,
-) {
-    val colors = LocalReaderColors.current
-    Surface(
-        color = colors.surface,
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.clickable { onClick() },
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            color = colors.onSurface,
-            fontWeight = if (emphasized) FontWeight.SemiBold else FontWeight.Normal,
-            fontSize = 16.sp,
-        )
     }
 }
 
@@ -207,40 +194,69 @@ private fun ChapterContent(
 
     LazyColumn(
         state = listState,
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(start = 72.dp, end = 64.dp, top = 56.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         items(verses, key = { it.number }) { verse ->
             val isSelected = verse.number in selected
             val bg = if (isSelected) colors.selection else Color.Transparent
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(4.dp))
                     .background(bg)
-                    .clickable { onToggle(verse.number) }
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) { onToggle(verse.number) }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.Top,
             ) {
                 Text(
-                    text = renderVerse(verse, typo, colors.verseNumber),
+                    text = "${verse.number}",
+                    style = typo.verseNumber,
+                    color = colors.verseNumber,
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .width(32.dp),
+                )
+                Text(
+                    text = verse.text,
                     style = typo.body,
                     color = colors.onSurface,
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
         item {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(40.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onPrevChapter) {
-                    Text("${AppGlyphs.ChevronLeft} 이전 장", color = colors.onSurfaceMuted)
-                }
-                TextButton(onClick = onNextChapter) {
-                    Text("다음 장 ${AppGlyphs.ChevronRight}", color = colors.onSurfaceMuted)
-                }
+                Text(
+                    text = "${AppGlyphs.ChevronLeft}  이전",
+                    style = typo.chrome,
+                    color = colors.onSurfaceMuted,
+                    modifier = Modifier
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                        ) { onPrevChapter() }
+                        .padding(8.dp),
+                )
+                Text(
+                    text = "다음  ${AppGlyphs.ChevronRight}",
+                    style = typo.chrome,
+                    color = colors.onSurfaceMuted,
+                    modifier = Modifier
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                        ) { onNextChapter() }
+                        .padding(8.dp),
+                )
             }
             Spacer(Modifier.height(120.dp))
         }
@@ -256,9 +272,14 @@ private fun renderVerse(
         SpanStyle(
             fontSize = typo.verseNumber.fontSize,
             fontWeight = typo.verseNumber.fontWeight,
+            fontStyle = typo.verseNumber.fontStyle,
+            fontFamily = typo.verseNumber.fontFamily,
+            letterSpacing = typo.verseNumber.letterSpacing,
             color = numberColor,
+            baselineShift = androidx.compose.ui.text.style.BaselineShift.Superscript,
         )
-    ) { append("${verse.number}  ") }
+    ) { append("${verse.number}") }
+    append("  ")
     append(verse.text)
 }
 
@@ -269,36 +290,66 @@ private fun SelectionActionBar(
     onShare: () -> Unit,
 ) {
     val colors = LocalReaderColors.current
+    val typo = LocalReaderTypography.current
+    val onAccent = if (colors.accent.luminance() > 0.5f) Color(0xFF111111) else Color(0xFFFAFAF7)
     Surface(
-        color = colors.surface,
-        shape = RoundedCornerShape(20.dp),
-        shadowElevation = 12.dp,
+        color = colors.background,
+        shape = RoundedCornerShape(2.dp),
+        shadowElevation = 0.dp,
         modifier = Modifier
-            .padding(20.dp)
+            .fillMaxWidth()
             .navigationBarsPadding(),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text = "${count}개 구절 선택됨", color = colors.onSurface)
-            Spacer(Modifier.width(16.dp))
-            TextButton(onClick = onClear) { Text("취소", color = colors.onSurfaceMuted) }
-            Spacer(Modifier.width(4.dp))
-            Surface(
-                color = colors.accent,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.clickable { onShare() },
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(colors.verseNumber.copy(alpha = 0.3f))
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                Text(
+                    text = "${count}개 선택",
+                    style = typo.chrome,
+                    color = colors.onSurfaceMuted,
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "취소",
+                    style = typo.chrome,
+                    color = colors.onSurfaceMuted,
+                    modifier = Modifier
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                        ) { onClear() }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                Surface(
+                    color = colors.accent,
+                    shape = RoundedCornerShape(2.dp),
+                    modifier = Modifier.clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) { onShare() },
                 ) {
-                    Text(text = AppGlyphs.Share, color = Color.White, fontSize = 16.sp)
-                    Spacer(Modifier.width(8.dp))
-                    Text("카드 만들기", color = Color.White, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "카드 만들기",
+                        style = typo.chrome,
+                        color = onAccent,
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                    )
                 }
             }
         }
     }
 }
+
+private fun Color.luminance(): Float =
+    0.299f * red + 0.587f * green + 0.114f * blue

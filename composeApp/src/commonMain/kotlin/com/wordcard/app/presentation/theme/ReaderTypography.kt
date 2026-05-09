@@ -2,21 +2,29 @@ package com.wordcard.app.presentation.theme
 
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 data class ReaderTypography(
-    val bodyFontSizeSp: Float = 18f,
-    val lineHeightMultiplier: Float = 1.7f,
+    val bodyFontSizeSp: Float = 28f,
+    val bodyLineHeightSp: Float = 60f,
+    val bodyLetterSpacingEm: Float = 0f,
+    val numberFontSizeSp: Float = 16f,
     val fontFamily: FontFamily = FontFamily.SansSerif,
+    val serifFontFamily: FontFamily = FontFamily.Serif,
+    val numberFontFamily: FontFamily = FontFamily.Monospace,
+    val iconFontFamily: FontFamily = FontFamily.SansSerif,
 ) {
     val body: TextStyle
         get() = TextStyle(
             fontSize = bodyFontSizeSp.sp,
-            lineHeight = (bodyFontSizeSp * lineHeightMultiplier).sp,
-            fontFamily = fontFamily,
+            lineHeight = bodyLineHeightSp.sp,
+            fontFamily = serifFontFamily,
             fontWeight = FontWeight.Normal,
+            letterSpacing = bodyLetterSpacingEm.em,
             lineHeightStyle = LineHeightStyle(
                 alignment = LineHeightStyle.Alignment.Center,
                 trim = LineHeightStyle.Trim.None,
@@ -25,31 +33,60 @@ data class ReaderTypography(
 
     val verseNumber: TextStyle
         get() = TextStyle(
-            fontSize = (bodyFontSizeSp * 0.7f).sp,
+            fontSize = numberFontSizeSp.sp,
+            fontFamily = numberFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontStyle = FontStyle.Italic,
+            letterSpacing = 0.5.sp,
+        )
+
+    val chrome: TextStyle
+        get() = TextStyle(
+            fontSize = 14.sp,
             fontFamily = fontFamily,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Normal,
+            letterSpacing = 0.3.sp,
+        )
+
+    val topBar: TextStyle
+        get() = TextStyle(
+            fontSize = 24.sp,
+            fontFamily = serifFontFamily,
+            fontWeight = FontWeight.Normal,
+            letterSpacing = 0.sp,
         )
 
     val title: TextStyle
         get() = TextStyle(
-            fontSize = (bodyFontSizeSp * 1.4f).sp,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.Bold,
+            fontSize = 17.sp,
+            fontFamily = fontFamily,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 0.2.sp,
+        )
+
+    val icon: TextStyle
+        get() = TextStyle(
+            fontSize = 48.sp,
+            fontFamily = iconFontFamily,
+            fontWeight = FontWeight.Thin,
+            letterSpacing = 0.sp,
         )
 
     val cardBody: TextStyle
         get() = TextStyle(
             fontSize = 22.sp,
-            lineHeight = 36.sp,
-            fontFamily = FontFamily.Serif,
+            lineHeight = 38.sp,
+            fontFamily = serifFontFamily,
             fontWeight = FontWeight.Normal,
+            letterSpacing = 0.05.em,
         )
 
     val cardReference: TextStyle
         get() = TextStyle(
-            fontSize = 16.sp,
-            lineHeight = 22.sp,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            fontFamily = fontFamily,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 0.5.sp,
         )
 }

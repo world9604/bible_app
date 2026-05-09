@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordCard — 폰트 베리에이션 목업</title>
+
+    <!-- Google Fonts: Nanum Myeongjo, Noto Sans KR (= 본고딕 / Source Han Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Pretendard -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+
+    <!-- Bookk Myungjo (부크크 명조) -->
+    <style>
+    @font-face {
+        font-family: 'Bookk Myungjo';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/BookkMyungjo-Lt.woff2') format('woff2');
+        font-weight: 400;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Bookk Myungjo';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/BookkMyungjo-Bd.woff2') format('woff2');
+        font-weight: 700;
+        font-display: swap;
+    }
+
+    /* Prestige Elite Std (절 번호용) */
+    @font-face {
+        font-family: 'Prestige Elite Std';
+        font-style: normal;
+        font-weight: 700;
+        src: url('https://fonts.cdnfonts.com/s/14163/PrestigeEliteStd-Bd.woff') format('woff');
+        font-display: swap;
+    }
+
+    :root {
+        --page-bg: #0E0E0E;
+        --page-fg: #E8E6E0;
+        --page-muted: #6F6D67;
+        --paper: #FAFAF7;
+        --paper-fg: #1A1A1A;
+        --paper-muted: #8A8A85;
+        --paper-verse: #B8B5AE;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--page-bg);
+        color: var(--page-fg);
+        font-family: 'Pretendard', 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+        font-feature-settings: "ss01", "ss02";
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    .page {
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 56px 40px 80px;
+    }
+
+    .page-header {
+        text-align: left;
+        margin-bottom: 56px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #232323;
+    }
+
+    .page-header h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+        font-weight: 500;
+        letter-spacing: -0.3px;
+    }
+
+    .page-header p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--page-muted);
+        letter-spacing: 0.2px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 56px 40px;
+    }
+
+    @media (max-width: 900px) {
+        .grid { grid-template-columns: 1fr; }
+        .page { padding: 32px 20px; }
+    }
+
+    .variant {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .variant-label {
+        margin-bottom: 18px;
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+    }
+
+    .variant-label .name {
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--page-fg);
+        letter-spacing: -0.2px;
+    }
+
+    .variant-label .meta {
+        font-size: 12px;
+        color: var(--page-muted);
+        letter-spacing: 0.4px;
+    }
+
+    .variant-label .meta::before {
+        content: '·';
+        margin-right: 14px;
+        color: #383838;
+    }
+
+    /* Phone-style frame — minimal, just paper with rounded corners */
+    .phone {
+        background: var(--paper);
+        color: var(--paper-fg);
+        border-radius: 4px;
+        overflow: hidden;
+        height: 700px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.04), 0 20px 40px -20px rgba(0,0,0,0.5);
+    }
+
+    .phone-topbar {
+        display: flex;
+        align-items: center;
+        padding: 22px 28px 16px;
+    }
+
+    .phone-topbar .book {
+        font-size: 17px;
+        font-weight: 500;
+        letter-spacing: 0.2px;
+        color: var(--paper-fg);
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    }
+
+    .phone-topbar .chapter {
+        margin-left: 10px;
+        font-size: 14px;
+        color: var(--paper-muted);
+        letter-spacing: 0.3px;
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    }
+
+    .phone-topbar .spacer { flex: 1; }
+
+    .phone-topbar .settings {
+        font-size: 17px;
+        color: var(--paper-muted);
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+        font-weight: 500;
+    }
+
+    .phone-body {
+        flex: 1;
+        overflow: hidden;
+        padding: 4px 28px 24px;
+    }
+
+    /* Verses — body font is per variant. Verse numbers always Prestige Elite */
+    .verse {
+        margin: 0;
+        padding: 4px 0;
+        font-size: 17px;
+        line-height: 1.85;
+        letter-spacing: -0.1px;
+        color: var(--paper-fg);
+    }
+
+    .verse + .verse { margin-top: 6px; }
+
+    .verse .num {
+        font-family: 'Prestige Elite Std', 'Courier Prime', monospace;
+        font-size: 11px;
+        color: var(--paper-verse);
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        vertical-align: super;
+        margin-right: 6px;
+    }
+
+    .phone-footer {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 32px 24px;
+        font-size: 13px;
+        color: var(--paper-muted);
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+        letter-spacing: 0.3px;
+    }
+
+    /* Per-variant body fonts */
+    .v-bookk .verse { font-family: 'Bookk Myungjo', 'Nanum Myeongjo', serif; }
+    .v-nanum .verse { font-family: 'Nanum Myeongjo', serif; }
+    .v-bongothic .verse { font-family: 'Noto Sans KR', sans-serif; font-weight: 400; }
+    .v-pretendard .verse { font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-weight: 400; }
+
+    /* small adjustments per font for visual harmony */
+    .v-bookk .verse { font-size: 18px; }
+    .v-nanum .verse { font-size: 18px; }
+    .v-bongothic .verse { font-size: 16.5px; line-height: 1.9; }
+    .v-pretendard .verse { font-size: 16px; line-height: 1.9; letter-spacing: -0.2px; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="page-header">
+            <h1>WordCard — 폰트 베리에이션</h1>
+            <p>본문 폰트 4종 비교 · 절 번호는 Prestige Elite Std 고정</p>
+        </div>
+
+        <div class="grid">
+            <!-- 1. 부크크 명조 -->
+            <div class="variant v-bookk">
+                <div class="variant-label">
+                    <span class="name">부크크 명조</span>
+                    <span class="meta">Bookk Myungjo · 명조 / 본문</span>
+                </div>
+                <div class="phone">
+                    <div class="phone-topbar">
+                        <span class="book">창세기</span>
+                        <span class="chapter">1</span>
+                        <span class="spacer"></span>
+                        <span class="settings">Aa</span>
+                    </div>
+                    <div class="phone-body">
+                        <p class="verse"><span class="num">1</span>태초에 하나님이 천지를 창조하시니라.</p>
+                        <p class="verse"><span class="num">2</span>땅이 혼돈하고 공허하며 흑암이 깊음 위에 있고 하나님의 영은 수면 위에 운행하시니라.</p>
+                        <p class="verse"><span class="num">3</span>하나님이 이르시되 빛이 있으라 하시니 빛이 있었고</p>
+                        <p class="verse"><span class="num">4</span>빛이 하나님이 보시기에 좋았더라 하나님이 빛과 어둠을 나누사</p>
+                        <p class="verse"><span class="num">5</span>하나님이 빛을 낮이라 부르시고 어둠을 밤이라 부르시니라 저녁이 되고 아침이 되니 이는 첫째 날이니라.</p>
+                        <p class="verse"><span class="num">6</span>하나님이 이르시되 물 가운데에 궁창이 있어 물과 물로 나뉘라 하시고</p>
+                    </div>
+                    <div class="phone-footer">
+                        <span>‹ 이전</span>
+                        <span>다음 ›</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 나눔명조 -->
+            <div class="variant v-nanum">
+                <div class="variant-label">
+                    <span class="name">나눔명조</span>
+                    <span class="meta">Nanum Myeongjo · 명조 / 본문</span>
+                </div>
+                <div class="phone">
+                    <div class="phone-topbar">
+                        <span class="book">창세기</span>
+                        <span class="chapter">1</span>
+                        <span class="spacer"></span>
+                        <span class="settings">Aa</span>
+                    </div>
+                    <div class="phone-body">
+                        <p class="verse"><span class="num">1</span>태초에 하나님이 천지를 창조하시니라.</p>
+                        <p class="verse"><span class="num">2</span>땅이 혼돈하고 공허하며 흑암이 깊음 위에 있고 하나님의 영은 수면 위에 운행하시니라.</p>
+                        <p class="verse"><span class="num">3</span>하나님이 이르시되 빛이 있으라 하시니 빛이 있었고</p>
+                        <p class="verse"><span class="num">4</span>빛이 하나님이 보시기에 좋았더라 하나님이 빛과 어둠을 나누사</p>
+                        <p class="verse"><span class="num">5</span>하나님이 빛을 낮이라 부르시고 어둠을 밤이라 부르시니라 저녁이 되고 아침이 되니 이는 첫째 날이니라.</p>
+                        <p class="verse"><span class="num">6</span>하나님이 이르시되 물 가운데에 궁창이 있어 물과 물로 나뉘라 하시고</p>
+                    </div>
+                    <div class="phone-footer">
+                        <span>‹ 이전</span>
+                        <span>다음 ›</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 본고딕 (Source Han Sans = Noto Sans KR) -->
+            <div class="variant v-bongothic">
+                <div class="variant-label">
+                    <span class="name">본고딕</span>
+                    <span class="meta">Source Han Sans / Noto Sans KR · 고딕 / 본문</span>
+                </div>
+                <div class="phone">
+                    <div class="phone-topbar">
+                        <span class="book">창세기</span>
+                        <span class="chapter">1</span>
+                        <span class="spacer"></span>
+                        <span class="settings">Aa</span>
+                    </div>
+                    <div class="phone-body">
+                        <p class="verse"><span class="num">1</span>태초에 하나님이 천지를 창조하시니라.</p>
+                        <p class="verse"><span class="num">2</span>땅이 혼돈하고 공허하며 흑암이 깊음 위에 있고 하나님의 영은 수면 위에 운행하시니라.</p>
+                        <p class="verse"><span class="num">3</span>하나님이 이르시되 빛이 있으라 하시니 빛이 있었고</p>
+                        <p class="verse"><span class="num">4</span>빛이 하나님이 보시기에 좋았더라 하나님이 빛과 어둠을 나누사</p>
+                        <p class="verse"><span class="num">5</span>하나님이 빛을 낮이라 부르시고 어둠을 밤이라 부르시니라 저녁이 되고 아침이 되니 이는 첫째 날이니라.</p>
+                        <p class="verse"><span class="num">6</span>하나님이 이르시되 물 가운데에 궁창이 있어 물과 물로 나뉘라 하시고</p>
+                    </div>
+                    <div class="phone-footer">
+                        <span>‹ 이전</span>
+                        <span>다음 ›</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 프리텐다드 -->
+            <div class="variant v-pretendard">
+                <div class="variant-label">
+                    <span class="name">프리텐다드</span>
+                    <span class="meta">Pretendard · 모던 산세리프 / 본문</span>
+                </div>
+                <div class="phone">
+                    <div class="phone-topbar">
+                        <span class="book">창세기</span>
+                        <span class="chapter">1</span>
+                        <span class="spacer"></span>
+                        <span class="settings">Aa</span>
+                    </div>
+                    <div class="phone-body">
+                        <p class="verse"><span class="num">1</span>태초에 하나님이 천지를 창조하시니라.</p>
+                        <p class="verse"><span class="num">2</span>땅이 혼돈하고 공허하며 흑암이 깊음 위에 있고 하나님의 영은 수면 위에 운행하시니라.</p>
+                        <p class="verse"><span class="num">3</span>하나님이 이르시되 빛이 있으라 하시니 빛이 있었고</p>
+                        <p class="verse"><span class="num">4</span>빛이 하나님이 보시기에 좋았더라 하나님이 빛과 어둠을 나누사</p>
+                        <p class="verse"><span class="num">5</span>하나님이 빛을 낮이라 부르시고 어둠을 밤이라 부르시니라 저녁이 되고 아침이 되니 이는 첫째 날이니라.</p>
+                        <p class="verse"><span class="num">6</span>하나님이 이르시되 물 가운데에 궁창이 있어 물과 물로 나뉘라 하시고</p>
+                    </div>
+                    <div class="phone-footer">
+                        <span>‹ 이전</span>
+                        <span>다음 ›</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
