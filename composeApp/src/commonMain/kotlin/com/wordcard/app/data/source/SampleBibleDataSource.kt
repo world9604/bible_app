@@ -5,9 +5,9 @@ import com.wordcard.app.data.model.ChapterDto
 import com.wordcard.app.data.model.VerseDto
 
 /**
- * MVP용 인메모리 샘플 데이터.
- * 라이선스 자유: 한국어 구절은 공개 도메인 의역(요약)이며, 영문은 KJV(Public Domain).
- * 정식 출시 전 라이선스 가능한 역본으로 교체 예정.
+ * 프리뷰/테스트 전용 인메모리 데이터 (6권 부분 발췌).
+ * 실제 앱은 [KrvBibleDataSource]를 사용한다 — DI 바인딩은 [com.wordcard.app.di.AppModule] 참고.
+ * Compose Preview에서 리소스 접근이 어려운 경우 임시로 이 소스를 주입할 수 있다.
  */
 class SampleBibleDataSource : BibleDataSource {
 

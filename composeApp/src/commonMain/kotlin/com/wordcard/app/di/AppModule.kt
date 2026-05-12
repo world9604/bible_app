@@ -3,7 +3,7 @@ package com.wordcard.app.di
 import com.wordcard.app.data.repository.BibleRepositoryImpl
 import com.wordcard.app.data.repository.InMemoryReadingPositionRepository
 import com.wordcard.app.data.source.BibleDataSource
-import com.wordcard.app.data.source.SampleBibleDataSource
+import com.wordcard.app.data.source.KrvBibleDataSource
 import com.wordcard.app.domain.repository.BibleRepository
 import com.wordcard.app.domain.repository.ReadingPositionRepository
 import com.wordcard.app.domain.usecase.GetBooksUseCase
@@ -18,7 +18,7 @@ import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 
 private val dataModule: Module = module {
-    single<BibleDataSource> { SampleBibleDataSource() }
+    single<BibleDataSource> { KrvBibleDataSource() }
     single<BibleRepository> { BibleRepositoryImpl(get()) }
     single<ReadingPositionRepository> { InMemoryReadingPositionRepository() }
 }

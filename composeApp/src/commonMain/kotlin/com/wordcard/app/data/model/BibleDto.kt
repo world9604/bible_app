@@ -3,6 +3,14 @@ package com.wordcard.app.data.model
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class BibleFileDto(
+    val version: String,
+    val versionName: String,
+    val language: String = "ko",
+    val books: List<BibleBookDto>,
+)
+
+@Serializable
 data class BibleBookDto(
     val id: String,
     val name: String,
