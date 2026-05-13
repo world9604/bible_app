@@ -1,0 +1,63 @@
+name: iOS Build (Compose Multiplatform)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ios-framework:
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.konan
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/libs.versions.toml') }}
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Setup gradle wrapper if missing
+        run: |
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version 8.10.2
+          fi
+
+      - name: Build iOS Simulator Arm64 framework (debug)
+        run: ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 --no-daemon
+
+      - name: Build iOS device Arm64 framework (release)
+        run: ./gradlew :composeApp:linkReleaseFrameworkIosArm64 --no-daemon
+
+      - name: List outputs
+        run: |
+          echo "=== iosSimulatorArm64 debug ==="
+          find composeApp/build/bin/iosSimulatorArm64 -type d -name "*.framework" -maxdepth 4
+          echo "=== iosArm64 release ==="
+          find composeApp/build/bin/iosArm64 -type d -name "*.framework" -maxdepth 4
+
+      - name: Upload Simulator framework
+        uses: actions/upload-artifact@v4
+        with:
+          name: ComposeApp-iosSimulatorArm64-debug.framework
+          path: composeApp/build/bin/iosSimulatorArm64/debugFramework/ComposeApp.framework
+
+      - name: Upload Device framework
+        uses: actions/upload-artifact@v4
+        with:
+          name: ComposeApp-iosArm64-release.framework
+          path: composeApp/build/bin/iosArm64/releaseFramework/ComposeApp.framework
