@@ -12,7 +12,7 @@ data class ReaderTypography(
     val bodyFontSizeSp: Float = 14f,
     val bodyLineHeightSp: Float = 28f,
     val bodyLetterSpacingEm: Float = 0f,
-    val numberFontSizeSp: Float = 12f,
+    val numberFontSizeSp: Float = 14f,
     val fontFamily: FontFamily = FontFamily.SansSerif,
     val serifFontFamily: FontFamily = FontFamily.Serif,
     val numberFontFamily: FontFamily = FontFamily.Monospace,

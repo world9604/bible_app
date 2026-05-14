@@ -56,6 +56,12 @@ internal val SepiaReaderColors = ReaderColors(
 val LocalReaderColors = staticCompositionLocalOf { LightReaderColors }
 val LocalReaderTypography = compositionLocalOf { ReaderTypography() }
 
+fun readerColorsFor(palette: ReaderPalette): ReaderColors = when (palette) {
+    ReaderPalette.Light -> LightReaderColors
+    ReaderPalette.Dark -> DarkReaderColors
+    ReaderPalette.Sepia -> SepiaReaderColors
+}
+
 @Composable
 fun WordCardTheme(
     palette: ReaderPalette = if (isSystemInDarkTheme()) ReaderPalette.Dark else ReaderPalette.Light,

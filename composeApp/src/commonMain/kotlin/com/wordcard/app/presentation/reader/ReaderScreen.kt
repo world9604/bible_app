@@ -37,7 +37,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,10 +62,12 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun ReaderScreen(
     viewModel: ReaderViewModel = koinViewModel(),
+    viewerSettings: ViewerSettings,
     onOpenSettings: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val readerColors = LocalReaderColors.current
+    var showYouTubeShorts by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -75,6 +79,8 @@ fun ReaderScreen(
                 chapter = state.currentChapter?.number,
                 onBack = viewModel::openBookPicker,
                 onTitleClick = viewModel::openChapterPicker,
+                onOpenYouTubeShorts = { showYouTubeShorts = true },
+                onOpenSettings = onOpenSettings,
             )
 
             Box(modifier = Modifier.fillMaxSize()) {
@@ -89,8 +95,7 @@ fun ReaderScreen(
                             verses = state.currentChapter!!.verses,
                             selected = state.selectedVerseNumbers,
                             onToggle = viewModel::toggleVerse,
-                            onPrevChapter = viewModel::previousChapter,
-                            onNextChapter = viewModel::nextChapter,
+                            settings = viewerSettings,
                         )
                     }
                 }
@@ -154,6 +159,14 @@ fun ReaderScreen(
                 onDismiss = viewModel::closeShareCard,
             )
         }
+
+        if (showYouTubeShorts && state.currentBook != null && state.currentChapter != null) {
+            YouTubeShortsSheet(
+                bookName = state.currentBook!!.name,
+                chapter = state.currentChapter!!.number,
+                onDismiss = { showYouTubeShorts = false },
+            )
+        }
     }
 }
 
@@ -163,6 +176,8 @@ private fun ReaderTopBar(
     chapter: Int?,
     onBack: () -> Unit,
     onTitleClick: () -> Unit,
+    onOpenYouTubeShorts: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val colors = LocalReaderColors.current
     val typo = LocalReaderTypography.current
@@ -195,6 +210,32 @@ private fun ReaderTopBar(
                     ) { onTitleClick() },
             )
         }
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = AppGlyphs.Shorts,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = colors.onSurface,
+            modifier = Modifier
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                ) { onOpenYouTubeShorts() }
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = AppGlyphs.Settings,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = colors.onSurface,
+            modifier = Modifier
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                ) { onOpenSettings() }
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+        )
     }
 }
 
@@ -203,8 +244,7 @@ private fun ChapterContent(
     verses: List<Verse>,
     selected: Set<Int>,
     onToggle: (Int) -> Unit,
-    onPrevChapter: () -> Unit,
-    onNextChapter: () -> Unit,
+    settings: ViewerSettings,
 ) {
     val listState = rememberLazyListState()
     val colors = LocalReaderColors.current
@@ -216,8 +256,13 @@ private fun ChapterContent(
 
     LazyColumn(
         state = listState,
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        contentPadding = PaddingValues(
+            start = settings.horizontalMarginDp.dp,
+            end = settings.horizontalMarginDp.dp,
+            top = settings.verticalMarginTopDp.dp,
+            bottom = settings.verticalMarginBottomDp.dp,
+        ),
+        verticalArrangement = Arrangement.spacedBy(settings.paragraphSpacingDp.dp),
     ) {
         items(verses, key = { it.number }) { verse ->
             val isSelected = verse.number in selected
@@ -239,8 +284,7 @@ private fun ChapterContent(
                     style = typo.verseNumber,
                     color = colors.verseNumber,
                     modifier = Modifier
-                        .padding(top = 2.dp)
-                        .width(32.dp),
+                        .padding(top = 2.dp, end = 10.dp),
                 )
                 Text(
                     text = verse.text,
@@ -251,35 +295,6 @@ private fun ChapterContent(
             }
         }
         item {
-            Spacer(Modifier.height(40.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "${AppGlyphs.ChevronLeft}  이전",
-                    style = typo.chrome,
-                    color = colors.onSurfaceMuted,
-                    modifier = Modifier
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() },
-                        ) { onPrevChapter() }
-                        .padding(8.dp),
-                )
-                Text(
-                    text = "다음  ${AppGlyphs.ChevronRight}",
-                    style = typo.chrome,
-                    color = colors.onSurfaceMuted,
-                    modifier = Modifier
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() },
-                        ) { onNextChapter() }
-                        .padding(8.dp),
-                )
-            }
             Spacer(Modifier.height(120.dp))
         }
     }

@@ -9,8 +9,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.wordcard.app.di.appModules
 import com.wordcard.app.presentation.reader.ReaderScreen
-import com.wordcard.app.presentation.settings.SettingsSheet
-import com.wordcard.app.presentation.theme.ReaderPalette
+import com.wordcard.app.presentation.reader.ViewerSettings
+import com.wordcard.app.presentation.reader.ViewerSettingsSheet
 import com.wordcard.app.presentation.theme.ReaderTypography
 import com.wordcard.app.presentation.theme.WordCardTheme
 import org.jetbrains.compose.resources.Font
@@ -53,9 +53,8 @@ private fun materialIconsFamily(): FontFamily = FontFamily(
 @Composable
 fun App() {
     KoinApplication(application = { modules(appModules) }) {
-        var palette by remember { mutableStateOf(ReaderPalette.Light) }
-        var fontSize by remember { mutableStateOf(17f) }
-        var showSettings by remember { mutableStateOf(false) }
+        var viewerSettings by remember { mutableStateOf(ViewerSettings.Default) }
+        var showViewerSettings by remember { mutableStateOf(false) }
 
         val sansFamily = koreanSansFamily()
         val serifFamily = bookkMyungjoFamily()
@@ -63,24 +62,25 @@ fun App() {
         val iconFamily = materialIconsFamily()
 
         WordCardTheme(
-            palette = palette,
+            palette = viewerSettings.palette,
             typography = ReaderTypography(
-                bodyFontSizeSp = fontSize,
-                bodyLineHeightSp = fontSize * 2f,
+                bodyFontSizeSp = viewerSettings.fontSizeSp,
+                bodyLineHeightSp = viewerSettings.fontSizeSp * viewerSettings.lineHeightMultiplier,
                 fontFamily = sansFamily,
                 serifFontFamily = serifFamily,
                 numberFontFamily = numberFamily,
                 iconFontFamily = iconFamily,
             ),
         ) {
-            ReaderScreen(onOpenSettings = { showSettings = true })
-            if (showSettings) {
-                SettingsSheet(
-                    palette = palette,
-                    fontSize = fontSize,
-                    onPaletteChange = { palette = it },
-                    onFontSizeChange = { fontSize = it },
-                    onDismiss = { showSettings = false },
+            ReaderScreen(
+                viewerSettings = viewerSettings,
+                onOpenSettings = { showViewerSettings = true },
+            )
+            if (showViewerSettings) {
+                ViewerSettingsSheet(
+                    current = viewerSettings,
+                    onSave = { viewerSettings = it },
+                    onDismiss = { showViewerSettings = false },
                 )
             }
         }

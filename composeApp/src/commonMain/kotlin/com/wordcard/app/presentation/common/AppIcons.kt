@@ -17,4 +17,7 @@ object AppGlyphs {
 
     /** Material Symbols Outlined `menu_book` (U+EA19) — uses iconFontFamily */
     const val TableOfContents = ""
+
+    /** Play/Shorts indicator — uses default text family */
+    const val Shorts = "▶"
 }
