@@ -3,7 +3,9 @@ package com.wordcard.app.presentation.reader
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -12,13 +14,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -89,6 +96,16 @@ fun ReaderScreen(
                 }
 
                 Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+                    if (state.currentChapter != null && state.currentBook != null) {
+                        val chapterNum = state.currentChapter!!.number
+                        val totalChapters = state.currentBook!!.chapterCount
+                        SideChapterNavRow(
+                            canGoPrev = chapterNum > 1,
+                            canGoNext = chapterNum < totalChapters,
+                            onPrev = viewModel::previousChapter,
+                            onNext = viewModel::nextChapter,
+                        )
+                    }
                     AnimatedVisibility(
                         visible = state.hasSelection,
                         enter = slideInVertically(initialOffsetY = { it }),
@@ -100,6 +117,9 @@ fun ReaderScreen(
                             onShare = viewModel::openShareCard,
                         )
                     }
+                    if (!state.hasSelection) {
+                        Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
+                    }
                 }
             }
         }
@@ -107,7 +127,9 @@ fun ReaderScreen(
         if (state.showBookPicker) {
             BookPickerSheet(
                 books = state.books,
-                onPick = viewModel::selectBook,
+                currentBookId = state.currentBook?.id,
+                currentChapter = state.currentChapter?.number,
+                onPickChapter = viewModel::selectBookAndChapter,
                 onDismiss = viewModel::closeBookPicker,
             )
         }
@@ -147,11 +169,11 @@ private fun ReaderTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 56.dp, end = 56.dp, top = 50.dp, bottom = 12.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = AppGlyphs.Back,
+            text = AppGlyphs.TableOfContents,
             style = typo.icon,
             color = colors.onSurface,
             modifier = Modifier
@@ -194,7 +216,7 @@ private fun ChapterContent(
 
     LazyColumn(
         state = listState,
-        contentPadding = PaddingValues(start = 72.dp, end = 64.dp, top = 56.dp, bottom = 8.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         items(verses, key = { it.number }) { verse ->
@@ -296,11 +318,9 @@ private fun SelectionActionBar(
         color = colors.background,
         shape = RoundedCornerShape(2.dp),
         shadowElevation = 0.dp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding(),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Column {
+        Column(modifier = Modifier.navigationBarsPadding()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -348,6 +368,69 @@ private fun SelectionActionBar(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SideChapterNavRow(
+    canGoPrev: Boolean,
+    canGoNext: Boolean,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .padding(horizontal = 16.dp),
+    ) {
+        if (canGoPrev) {
+            NavCircleButton(
+                modifier = Modifier.align(Alignment.CenterStart),
+                glyph = AppGlyphs.ChevronLeft,
+                onClick = onPrev,
+            )
+        }
+        if (canGoNext) {
+            NavCircleButton(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                glyph = AppGlyphs.ChevronRight,
+                onClick = onNext,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavCircleButton(
+    modifier: Modifier = Modifier,
+    glyph: String,
+    onClick: () -> Unit,
+) {
+    val colors = LocalReaderColors.current
+    val interaction = remember { MutableInteractionSource() }
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(colors.selection)
+            .border(BorderStroke(1.5.dp, Color.White), CircleShape)
+            .clickable(indication = null, interactionSource = interaction) { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = glyph,
+            fontSize = 24.sp,
+            lineHeight = 24.sp,
+            color = colors.onSurface,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            style = androidx.compose.ui.text.TextStyle(
+                lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+                    alignment = androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
+                    trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
+                ),
+            ),
+        )
     }
 }
 

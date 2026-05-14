@@ -71,6 +71,23 @@ class ReaderViewModel(
         }
     }
 
+    fun selectBookAndChapter(bookId: String, chapterNumber: Int) {
+        viewModelScope.launch {
+            val book = _state.value.books.firstOrNull { it.id == bookId } ?: return@launch
+            val chapter = getChapter(book.id, chapterNumber)
+            savePosition(ReadingPosition(book.id, chapterNumber))
+            _state.update {
+                it.copy(
+                    currentBook = book,
+                    currentChapter = chapter,
+                    selectedVerseNumbers = emptySet(),
+                    showBookPicker = false,
+                    showChapterPicker = false,
+                )
+            }
+        }
+    }
+
     fun toggleVerse(verseNumber: Int) {
         _state.update { state ->
             val newSelection = if (verseNumber in state.selectedVerseNumbers) {

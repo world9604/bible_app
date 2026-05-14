@@ -98,8 +98,8 @@ fun SettingsSheet(
                     Slider(
                         value = fontSize,
                         onValueChange = onFontSizeChange,
-                        valueRange = 28f..56f,
-                        steps = 27,
+                        valueRange = 12f..24f,
+                        steps = 11,
                         colors = SliderDefaults.colors(
                             thumbColor = colors.accent,
                             activeTrackColor = colors.accent,

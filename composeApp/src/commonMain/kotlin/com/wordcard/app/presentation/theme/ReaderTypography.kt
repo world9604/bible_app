@@ -9,10 +9,10 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 data class ReaderTypography(
-    val bodyFontSizeSp: Float = 28f,
-    val bodyLineHeightSp: Float = 60f,
+    val bodyFontSizeSp: Float = 14f,
+    val bodyLineHeightSp: Float = 28f,
     val bodyLetterSpacingEm: Float = 0f,
-    val numberFontSizeSp: Float = 16f,
+    val numberFontSizeSp: Float = 12f,
     val fontFamily: FontFamily = FontFamily.SansSerif,
     val serifFontFamily: FontFamily = FontFamily.Serif,
     val numberFontFamily: FontFamily = FontFamily.Monospace,
@@ -50,7 +50,7 @@ data class ReaderTypography(
 
     val topBar: TextStyle
         get() = TextStyle(
-            fontSize = 24.sp,
+            fontSize = 17.sp,
             fontFamily = serifFontFamily,
             fontWeight = FontWeight.Normal,
             letterSpacing = 0.sp,
@@ -66,7 +66,7 @@ data class ReaderTypography(
 
     val icon: TextStyle
         get() = TextStyle(
-            fontSize = 48.sp,
+            fontSize = 28.sp,
             fontFamily = iconFontFamily,
             fontWeight = FontWeight.Thin,
             letterSpacing = 0.sp,

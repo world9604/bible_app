@@ -54,7 +54,7 @@ private fun materialIconsFamily(): FontFamily = FontFamily(
 fun App() {
     KoinApplication(application = { modules(appModules) }) {
         var palette by remember { mutableStateOf(ReaderPalette.Light) }
-        var fontSize by remember { mutableStateOf(28f) }
+        var fontSize by remember { mutableStateOf(17f) }
         var showSettings by remember { mutableStateOf(false) }
 
         val sansFamily = koreanSansFamily()
@@ -66,6 +66,7 @@ fun App() {
             palette = palette,
             typography = ReaderTypography(
                 bodyFontSizeSp = fontSize,
+                bodyLineHeightSp = fontSize * 2f,
                 fontFamily = sansFamily,
                 serifFontFamily = serifFamily,
                 numberFontFamily = numberFamily,

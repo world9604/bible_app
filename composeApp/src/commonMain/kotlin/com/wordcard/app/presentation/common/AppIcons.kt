@@ -14,4 +14,7 @@ object AppGlyphs {
 
     /** Material Symbols Outlined `arrow_back` (U+E5C4) — uses iconFontFamily */
     const val Back = ""
+
+    /** Material Symbols Outlined `menu_book` (U+EA19) — uses iconFontFamily */
+    const val TableOfContents = ""
 }
