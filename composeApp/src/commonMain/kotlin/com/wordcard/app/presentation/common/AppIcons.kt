@@ -20,4 +20,13 @@ object AppGlyphs {
 
     /** Play/Shorts indicator — uses default text family */
     const val Shorts = "▶"
+
+    /** Material Symbols Outlined `bookmark` (U+E866) — uses iconFontFamily */
+    const val Bookmark = ""
+
+    /** Material Symbols Outlined `border_color` highlighter (U+E22B) — uses iconFontFamily */
+    const val Highlight = ""
+
+    /** Material Symbols Outlined `edit_note` (U+E745) — uses iconFontFamily */
+    const val Note = ""
 }

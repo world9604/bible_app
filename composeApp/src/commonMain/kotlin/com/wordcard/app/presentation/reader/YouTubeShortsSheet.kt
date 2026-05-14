@@ -62,10 +62,20 @@ fun YouTubeShortsSheet(
             PlatformWebView(
                 url = url,
                 modifier = Modifier.fillMaxWidth().weight(1f),
+                injectedCss = HIDE_BOTTOM_NAV_CSS,
             )
         }
     }
 }
+
+private val HIDE_BOTTOM_NAV_CSS = """
+    ytm-pivot-bar-renderer,
+    .pivot-bar,
+    #pivot-bar,
+    ytm-app-footer,
+    ytm-mealbar-promo-renderer { display: none !important; }
+    body, ytm-app { padding-bottom: 0 !important; margin-bottom: 0 !important; }
+""".trimIndent()
 
 private fun buildShortsSearchUrl(bookName: String, chapter: Int): String {
     val query = "$bookName ${chapter}장"

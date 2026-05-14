@@ -12,7 +12,9 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLIFrameElement
 
 @Composable
-actual fun PlatformWebView(url: String, modifier: Modifier) {
+actual fun PlatformWebView(url: String, modifier: Modifier, injectedCss: String?) {
+    // injectedCss is ignored on web: m.youtube.com is cross-origin, so its
+    // DOM is not accessible from the host iframe.
     val density = LocalDensity.current.density
     val iframe = remember {
         (document.createElement("iframe") as HTMLIFrameElement).apply {

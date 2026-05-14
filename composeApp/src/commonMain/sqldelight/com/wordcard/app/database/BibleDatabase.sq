@@ -1,0 +1,47 @@
+-- Schema for local persistence of user content.
+-- The application data (books, chapters, verses) is loaded from bundled JSON and is
+-- not stored here. Only user-generated annotations and reading progress.
+
+CREATE TABLE VerseAnnotationEntity (
+    book_id TEXT NOT NULL,
+    chapter INTEGER NOT NULL,
+    verse_number INTEGER NOT NULL,
+    bookmarked INTEGER NOT NULL DEFAULT 0,
+    highlight TEXT,
+    memo TEXT,
+    PRIMARY KEY (book_id, chapter, verse_number)
+);
+
+CREATE INDEX verse_annotation_book_chapter_idx
+    ON VerseAnnotationEntity (book_id, chapter);
+
+CREATE TABLE ReadingPositionEntity (
+    id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+    book_id TEXT NOT NULL,
+    chapter INTEGER NOT NULL,
+    verse INTEGER NOT NULL DEFAULT 1
+);
+
+-- Annotation queries ----------------------------------------------------------
+
+selectAnnotationsForChapter:
+SELECT * FROM VerseAnnotationEntity
+WHERE book_id = :bookId AND chapter = :chapter;
+
+upsertAnnotation:
+INSERT OR REPLACE INTO VerseAnnotationEntity (
+    book_id, chapter, verse_number, bookmarked, highlight, memo
+) VALUES (?, ?, ?, ?, ?, ?);
+
+deleteAnnotation:
+DELETE FROM VerseAnnotationEntity
+WHERE book_id = ? AND chapter = ? AND verse_number = ?;
+
+-- Reading position queries ----------------------------------------------------
+
+selectReadingPosition:
+SELECT * FROM ReadingPositionEntity WHERE id = 1;
+
+upsertReadingPosition:
+INSERT OR REPLACE INTO ReadingPositionEntity (id, book_id, chapter, verse)
+VALUES (1, ?, ?, ?);

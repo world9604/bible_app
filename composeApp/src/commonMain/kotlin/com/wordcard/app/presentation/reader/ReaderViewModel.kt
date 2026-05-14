@@ -2,11 +2,14 @@ package com.wordcard.app.presentation.reader
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wordcard.app.domain.model.HighlightColor
 import com.wordcard.app.domain.model.ReadingPosition
+import com.wordcard.app.domain.repository.VerseAnnotationRepository
 import com.wordcard.app.domain.usecase.GetBooksUseCase
 import com.wordcard.app.domain.usecase.GetChapterUseCase
 import com.wordcard.app.domain.usecase.ObserveReadingPositionUseCase
 import com.wordcard.app.domain.usecase.SaveReadingPositionUseCase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,10 +22,13 @@ class ReaderViewModel(
     private val getChapter: GetChapterUseCase,
     private val observePosition: ObserveReadingPositionUseCase,
     private val savePosition: SaveReadingPositionUseCase,
+    private val annotations: VerseAnnotationRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ReaderUiState())
     val state: StateFlow<ReaderUiState> = _state.asStateFlow()
+
+    private var annotationJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -36,6 +42,18 @@ class ReaderViewModel(
                 currentBook = book,
                 currentChapter = chapter,
             )
+            if (book != null && chapter != null) {
+                observeAnnotations(book.id, chapter.number)
+            }
+        }
+    }
+
+    private fun observeAnnotations(bookId: String, chapter: Int) {
+        annotationJob?.cancel()
+        annotationJob = viewModelScope.launch {
+            annotations.observe(bookId, chapter).collect { map ->
+                _state.update { it.copy(annotations = map) }
+            }
         }
     }
 
@@ -49,10 +67,12 @@ class ReaderViewModel(
                     currentBook = book,
                     currentChapter = chapter,
                     selectedVerseNumbers = emptySet(),
+                    annotations = emptyMap(),
                     showBookPicker = false,
                     showChapterPicker = false,
                 )
             }
+            observeAnnotations(book.id, 1)
         }
     }
 
@@ -65,9 +85,11 @@ class ReaderViewModel(
                 it.copy(
                     currentChapter = chapter,
                     selectedVerseNumbers = emptySet(),
+                    annotations = emptyMap(),
                     showChapterPicker = false,
                 )
             }
+            observeAnnotations(book.id, chapterNumber)
         }
     }
 
@@ -81,10 +103,12 @@ class ReaderViewModel(
                     currentBook = book,
                     currentChapter = chapter,
                     selectedVerseNumbers = emptySet(),
+                    annotations = emptyMap(),
                     showBookPicker = false,
                     showChapterPicker = false,
                 )
             }
+            observeAnnotations(book.id, chapterNumber)
         }
     }
 
@@ -100,7 +124,12 @@ class ReaderViewModel(
     }
 
     fun clearSelection() {
-        _state.update { it.copy(selectedVerseNumbers = emptySet()) }
+        _state.update {
+            it.copy(
+                selectedVerseNumbers = emptySet(),
+                showHighlightPicker = false,
+            )
+        }
     }
 
     fun openBookPicker() = _state.update { it.copy(showBookPicker = true) }
@@ -109,6 +138,84 @@ class ReaderViewModel(
     fun closeChapterPicker() = _state.update { it.copy(showChapterPicker = false) }
     fun openShareCard() = _state.update { it.copy(showShareCard = true) }
     fun closeShareCard() = _state.update { it.copy(showShareCard = false) }
+
+    /** Toggle bookmark on every selected verse. If all are already bookmarked, remove from all. */
+    fun toggleBookmarkOnSelection() {
+        val s = _state.value
+        val book = s.currentBook ?: return
+        val chapter = s.currentChapter ?: return
+        val verses = s.selectedVerseNumbers
+        if (verses.isEmpty()) return
+        val targetBookmarked = !s.allSelectedBookmarked
+        viewModelScope.launch {
+            annotations.setBookmark(book.id, chapter.number, verses, targetBookmarked)
+        }
+        clearSelection()
+    }
+
+    fun toggleHighlightPicker() {
+        _state.update { it.copy(showHighlightPicker = !it.showHighlightPicker) }
+    }
+
+    /** Apply a highlight color to all selected verses (or clear when [color] is null). */
+    fun applyHighlight(color: HighlightColor?) {
+        val s = _state.value
+        val book = s.currentBook ?: return
+        val chapter = s.currentChapter ?: return
+        val verses = s.selectedVerseNumbers
+        if (verses.isEmpty()) return
+        viewModelScope.launch {
+            annotations.setHighlight(book.id, chapter.number, verses, color)
+        }
+        clearSelection()
+    }
+
+    /** Open memo editor for the currently selected single verse, or a specific verse. */
+    fun openMemoEditor(verseNumber: Int? = null) {
+        val s = _state.value
+        val target = verseNumber ?: s.selectedVerseNumbers.singleOrNull() ?: return
+        val existing = s.annotations[target]?.memo.orEmpty()
+        _state.update {
+            it.copy(
+                memoEditingVerse = target,
+                memoDraft = existing,
+                showHighlightPicker = false,
+            )
+        }
+    }
+
+    fun updateMemoDraft(text: String) {
+        _state.update { it.copy(memoDraft = text) }
+    }
+
+    fun saveMemo() {
+        val s = _state.value
+        val book = s.currentBook ?: return
+        val chapter = s.currentChapter ?: return
+        val verse = s.memoEditingVerse ?: return
+        val text = s.memoDraft
+        viewModelScope.launch {
+            annotations.setMemo(book.id, chapter.number, verse, text)
+        }
+        _state.update { it.copy(memoEditingVerse = null, memoDraft = "") }
+        clearSelection()
+    }
+
+    fun deleteMemo() {
+        val s = _state.value
+        val book = s.currentBook ?: return
+        val chapter = s.currentChapter ?: return
+        val verse = s.memoEditingVerse ?: return
+        viewModelScope.launch {
+            annotations.setMemo(book.id, chapter.number, verse, null)
+        }
+        _state.update { it.copy(memoEditingVerse = null, memoDraft = "") }
+        clearSelection()
+    }
+
+    fun dismissMemoEditor() {
+        _state.update { it.copy(memoEditingVerse = null, memoDraft = "") }
+    }
 
     fun nextChapter() {
         val state = _state.value

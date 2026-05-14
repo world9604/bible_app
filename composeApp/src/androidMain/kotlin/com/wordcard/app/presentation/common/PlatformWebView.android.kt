@@ -1,6 +1,7 @@
 package com.wordcard.app.presentation.common
 
 import android.annotation.SuppressLint
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -9,9 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 
-@SuppressLint("SetJavaScriptEnabled")
+@SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
 @Composable
-actual fun PlatformWebView(url: String, modifier: Modifier) {
+actual fun PlatformWebView(url: String, modifier: Modifier, injectedCss: String?) {
     AndroidView(
         modifier = modifier,
         factory = { context ->
@@ -24,12 +25,26 @@ actual fun PlatformWebView(url: String, modifier: Modifier) {
                     javaScriptEnabled = true
                     domStorageEnabled = true
                     mediaPlaybackRequiresUserGesture = false
-                    loadWithOverviewMode = true
-                    useWideViewPort = true
-                    userAgentString = userAgentString +
-                        " Mobile Safari/537.36"
                 }
-                webViewClient = WebViewClient()
+                isVerticalScrollBarEnabled = true
+                isHorizontalScrollBarEnabled = false
+                overScrollMode = WebView.OVER_SCROLL_NEVER
+                setOnTouchListener { v, event ->
+                    when (event.actionMasked) {
+                        MotionEvent.ACTION_DOWN,
+                        MotionEvent.ACTION_MOVE,
+                        -> v.parent?.requestDisallowInterceptTouchEvent(true)
+                    }
+                    false
+                }
+                webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView, finishedUrl: String?) {
+                        super.onPageFinished(view, finishedUrl)
+                        injectedCss?.let { css ->
+                            view.evaluateJavascript(buildCssInjectionScript(css), null)
+                        }
+                    }
+                }
                 webChromeClient = WebChromeClient()
                 loadUrl(url)
             }
@@ -38,4 +53,13 @@ actual fun PlatformWebView(url: String, modifier: Modifier) {
             if (webView.url != url) webView.loadUrl(url)
         },
     )
+}
+
+private fun buildCssInjectionScript(css: String): String {
+    val escaped = css
+        .replace("\\", "\\\\")
+        .replace("'", "\\'")
+        .replace("\n", " ")
+        .replace("\r", "")
+    return "(function(){var s=document.createElement('style');s.innerHTML='$escaped';document.head.appendChild(s);})();"
 }

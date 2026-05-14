@@ -33,7 +33,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,11 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,7 +51,6 @@ import com.wordcard.app.domain.model.Verse
 import com.wordcard.app.presentation.common.AppGlyphs
 import com.wordcard.app.presentation.theme.LocalReaderColors
 import com.wordcard.app.presentation.theme.LocalReaderTypography
-import com.wordcard.app.presentation.theme.ReaderTypography
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -94,7 +88,9 @@ fun ReaderScreen(
                         ChapterContent(
                             verses = state.currentChapter!!.verses,
                             selected = state.selectedVerseNumbers,
+                            annotations = state.annotations,
                             onToggle = viewModel::toggleVerse,
+                            onOpenMemo = { viewModel.openMemoEditor(it) },
                             settings = viewerSettings,
                         )
                     }
@@ -118,8 +114,14 @@ fun ReaderScreen(
                     ) {
                         SelectionActionBar(
                             count = state.selectedVerseNumbers.size,
+                            allBookmarked = state.allSelectedBookmarked,
+                            showHighlightPicker = state.showHighlightPicker,
                             onClear = viewModel::clearSelection,
                             onShare = viewModel::openShareCard,
+                            onBookmark = viewModel::toggleBookmarkOnSelection,
+                            onToggleHighlightPicker = viewModel::toggleHighlightPicker,
+                            onPickHighlight = viewModel::applyHighlight,
+                            onMemo = { viewModel.openMemoEditor() },
                         )
                     }
                     if (!state.hasSelection) {
@@ -165,6 +167,22 @@ fun ReaderScreen(
                 bookName = state.currentBook!!.name,
                 chapter = state.currentChapter!!.number,
                 onDismiss = { showYouTubeShorts = false },
+            )
+        }
+
+        if (state.showMemoEditor && state.currentBook != null && state.currentChapter != null) {
+            val verse = state.memoEditingVerse!!
+            val hasExisting = state.annotations[verse]?.memo?.isNotBlank() == true
+            MemoEditorSheet(
+                bookName = state.currentBook!!.name,
+                chapter = state.currentChapter!!.number,
+                verseNumber = verse,
+                draft = state.memoDraft,
+                hasExistingMemo = hasExisting,
+                onChange = viewModel::updateMemoDraft,
+                onSave = viewModel::saveMemo,
+                onDelete = viewModel::deleteMemo,
+                onDismiss = viewModel::dismissMemoEditor,
             )
         }
     }
@@ -243,7 +261,9 @@ private fun ReaderTopBar(
 private fun ChapterContent(
     verses: List<Verse>,
     selected: Set<Int>,
+    annotations: Map<Int, com.wordcard.app.domain.model.VerseAnnotation>,
     onToggle: (Int) -> Unit,
+    onOpenMemo: (Int) -> Unit,
     settings: ViewerSettings,
 ) {
     val listState = rememberLazyListState()
@@ -266,7 +286,13 @@ private fun ChapterContent(
     ) {
         items(verses, key = { it.number }) { verse ->
             val isSelected = verse.number in selected
-            val bg = if (isSelected) colors.selection else Color.Transparent
+            val annotation = annotations[verse.number]
+            val highlight = annotation?.highlight
+            val bg = when {
+                isSelected -> colors.selection
+                highlight != null -> colors.highlightOf(highlight)
+                else -> Color.Transparent
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -279,6 +305,16 @@ private fun ChapterContent(
                     .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.Top,
             ) {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 4.dp, end = 6.dp)
+                        .width(3.dp)
+                        .height(18.dp)
+                        .clip(RoundedCornerShape(1.5.dp))
+                        .background(
+                            if (annotation?.bookmarked == true) colors.verseNumber else Color.Transparent,
+                        ),
+                )
                 Text(
                     text = "${verse.number}",
                     style = typo.verseNumber,
@@ -292,6 +328,22 @@ private fun ChapterContent(
                     color = colors.onSurface,
                     modifier = Modifier.weight(1f),
                 )
+                if (annotation?.memo?.isNotBlank() == true) {
+                    Text(
+                        text = AppGlyphs.Note,
+                        fontFamily = typo.iconFontFamily,
+                        fontSize = 18.sp,
+                        color = colors.verseNumber,
+                        modifier = Modifier
+                            .padding(start = 8.dp, top = 2.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() },
+                            ) { onOpenMemo(verse.number) }
+                            .padding(horizontal = 2.dp),
+                    )
+                }
             }
         }
         item {
@@ -300,35 +352,20 @@ private fun ChapterContent(
     }
 }
 
-private fun renderVerse(
-    verse: Verse,
-    typo: ReaderTypography,
-    numberColor: Color,
-): AnnotatedString = buildAnnotatedString {
-    withStyle(
-        SpanStyle(
-            fontSize = typo.verseNumber.fontSize,
-            fontWeight = typo.verseNumber.fontWeight,
-            fontStyle = typo.verseNumber.fontStyle,
-            fontFamily = typo.verseNumber.fontFamily,
-            letterSpacing = typo.verseNumber.letterSpacing,
-            color = numberColor,
-            baselineShift = androidx.compose.ui.text.style.BaselineShift.Superscript,
-        )
-    ) { append("${verse.number}") }
-    append("  ")
-    append(verse.text)
-}
-
 @Composable
 private fun SelectionActionBar(
     count: Int,
+    allBookmarked: Boolean,
+    showHighlightPicker: Boolean,
     onClear: () -> Unit,
     onShare: () -> Unit,
+    onBookmark: () -> Unit,
+    onToggleHighlightPicker: () -> Unit,
+    onPickHighlight: (com.wordcard.app.domain.model.HighlightColor?) -> Unit,
+    onMemo: () -> Unit,
 ) {
     val colors = LocalReaderColors.current
     val typo = LocalReaderTypography.current
-    val onAccent = if (colors.accent.luminance() > 0.5f) Color(0xFF111111) else Color(0xFFFAFAF7)
     Surface(
         color = colors.background,
         shape = RoundedCornerShape(2.dp),
@@ -342,10 +379,19 @@ private fun SelectionActionBar(
                     .height(1.dp)
                     .background(colors.verseNumber.copy(alpha = 0.3f))
             )
+
+            AnimatedVisibility(
+                visible = showHighlightPicker,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it }),
+            ) {
+                HighlightPickerRow(onPick = onPickHighlight)
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -365,25 +411,141 @@ private fun SelectionActionBar(
                         ) { onClear() }
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                 )
-                Spacer(Modifier.width(4.dp))
-                Surface(
-                    color = colors.accent,
-                    shape = RoundedCornerShape(2.dp),
-                    modifier = Modifier.clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
-                    ) { onShare() },
-                ) {
-                    Text(
-                        text = "카드 만들기",
-                        style = typo.chrome,
-                        color = onAccent,
-                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
-                    )
-                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ActionPill(
+                    glyph = AppGlyphs.Bookmark,
+                    label = if (allBookmarked) "책갈피 해제" else "책갈피",
+                    active = allBookmarked,
+                    onClick = onBookmark,
+                    modifier = Modifier.weight(1f),
+                )
+                ActionPill(
+                    glyph = AppGlyphs.Highlight,
+                    label = "형광펜",
+                    active = showHighlightPicker,
+                    onClick = onToggleHighlightPicker,
+                    modifier = Modifier.weight(1f),
+                )
+                ActionPill(
+                    glyph = AppGlyphs.Note,
+                    label = "메모",
+                    active = false,
+                    enabled = count == 1,
+                    onClick = onMemo,
+                    modifier = Modifier.weight(1f),
+                )
+                ActionPill(
+                    glyph = AppGlyphs.Share,
+                    label = "카드",
+                    active = false,
+                    onClick = onShare,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
+}
+
+@Composable
+private fun ActionPill(
+    glyph: String,
+    label: String,
+    active: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val colors = LocalReaderColors.current
+    val typo = LocalReaderTypography.current
+    val bg = if (active) colors.selection else Color.Transparent
+    val fg = when {
+        !enabled -> colors.onSurfaceMuted.copy(alpha = 0.4f)
+        active -> colors.accent
+        else -> colors.onSurface
+    }
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg)
+            .clickable(
+                enabled = enabled,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+            ) { onClick() }
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = glyph,
+            fontFamily = typo.iconFontFamily,
+            fontSize = 22.sp,
+            color = fg,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = label,
+            style = typo.chrome.copy(fontSize = 11.sp),
+            color = fg,
+        )
+    }
+}
+
+@Composable
+private fun HighlightPickerRow(
+    onPick: (com.wordcard.app.domain.model.HighlightColor?) -> Unit,
+) {
+    val colors = LocalReaderColors.current
+    val typo = LocalReaderTypography.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        ColorDot(color = colors.highlightYellow, onClick = { onPick(com.wordcard.app.domain.model.HighlightColor.Yellow) })
+        ColorDot(color = colors.highlightGreen, onClick = { onPick(com.wordcard.app.domain.model.HighlightColor.Green) })
+        ColorDot(color = colors.highlightBlue, onClick = { onPick(com.wordcard.app.domain.model.HighlightColor.Blue) })
+        ColorDot(color = colors.highlightPink, onClick = { onPick(com.wordcard.app.domain.model.HighlightColor.Pink) })
+        ColorDot(color = colors.highlightLavender, onClick = { onPick(com.wordcard.app.domain.model.HighlightColor.Lavender) })
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = "지우기",
+            style = typo.chrome,
+            color = colors.onSurfaceMuted,
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                ) { onPick(null) }
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun ColorDot(color: Color, onClick: () -> Unit) {
+    val readerColors = LocalReaderColors.current
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .clip(CircleShape)
+            .background(color)
+            .border(BorderStroke(1.dp, readerColors.verseNumber.copy(alpha = 0.4f)), CircleShape)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+            ) { onClick() },
+    )
 }
 
 @Composable
@@ -449,5 +611,3 @@ private fun NavCircleButton(
     }
 }
 
-private fun Color.luminance(): Float =
-    0.299f * red + 0.587f * green + 0.114f * blue
