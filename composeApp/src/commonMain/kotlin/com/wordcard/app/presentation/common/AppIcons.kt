@@ -29,4 +29,7 @@ object AppGlyphs {
 
     /** Material Symbols Outlined `edit_note` (U+E745) — uses iconFontFamily */
     const val Note = ""
+
+    /** Material Symbols Outlined `mail` (U+E158) — uses iconFontFamily */
+    const val Mail = ""
 }

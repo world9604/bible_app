@@ -62,24 +62,42 @@ fun YouTubeShortsSheet(
             PlatformWebView(
                 url = url,
                 modifier = Modifier.fillMaxWidth().weight(1f),
-                injectedCss = HIDE_BOTTOM_NAV_CSS,
+                injectedCss = HIDE_NON_SHORTS_TABS_CSS,
             )
         }
     }
 }
 
-private val HIDE_BOTTOM_NAV_CSS = """
-    ytm-pivot-bar-renderer,
-    .pivot-bar,
-    #pivot-bar,
+// Hide every pivot-bar item except Shorts. We target multiple variants because
+// YouTube ships several DOM forms (mobile, lazy-rendered, A/B variants).
+private val HIDE_NON_SHORTS_TABS_CSS = """
+    ytm-pivot-bar-item-renderer { display: none !important; }
+    ytm-pivot-bar-item-renderer[tab-identifier="FEshorts"],
+    ytm-pivot-bar-item-renderer[aria-label*="Shorts" i],
+    ytm-pivot-bar-item-renderer[aria-label*="숏츠"],
+    ytm-pivot-bar-item-renderer[aria-label*="쇼츠"] { display: flex !important; }
+
+    a.pivot-bar-item-renderer { display: none !important; }
+    a.pivot-bar-item-renderer[href*="/shorts"],
+    a.pivot-bar-item-renderer[aria-label*="Shorts" i],
+    a.pivot-bar-item-renderer[aria-label*="숏츠"],
+    a.pivot-bar-item-renderer[aria-label*="쇼츠"] { display: flex !important; }
+
     ytm-app-footer,
-    ytm-mealbar-promo-renderer { display: none !important; }
-    body, ytm-app { padding-bottom: 0 !important; margin-bottom: 0 !important; }
+    ytm-mealbar-promo-renderer,
+    ytm-pivot-bar-item-renderer[tab-identifier="FEaccount"],
+    ytm-pivot-bar-item-renderer[tab-identifier="FEwhat_to_watch"],
+    ytm-pivot-bar-item-renderer[tab-identifier="FEsubscriptions"],
+    ytm-pivot-bar-item-renderer[tab-identifier="FElibrary"],
+    ytm-pivot-bar-item-renderer[tab-identifier="FEcontent_creation"] { display: none !important; }
 """.trimIndent()
 
 private fun buildShortsSearchUrl(bookName: String, chapter: Int): String {
     val query = "$bookName ${chapter}장"
-    return "https://m.youtube.com/results?search_query=${urlEncodeQuery(query)}&sp=EgIYAQ%253D%253D"
+    // sp=EgIYAQ%3D%3D filters search results to videos; the previous
+    // double-encoded "%253D" form left the filter inert, so YouTube returned
+    // the unfiltered results page.
+    return "https://m.youtube.com/results?search_query=${urlEncodeQuery(query)}&sp=EgIYAQ%3D%3D"
 }
 
 private fun urlEncodeQuery(s: String): String {

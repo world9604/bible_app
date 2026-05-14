@@ -61,5 +61,17 @@ private fun buildCssInjectionScript(css: String): String {
         .replace("'", "\\'")
         .replace("\n", " ")
         .replace("\r", "")
-    return "(function(){var s=document.createElement('style');s.innerHTML='$escaped';document.head.appendChild(s);})();"
+    return """
+        (function(){
+          function inject(){
+            if (document.getElementById('__wc_inject_style')) return;
+            var s=document.createElement('style');
+            s.id='__wc_inject_style';
+            s.innerHTML='$escaped';
+            (document.head||document.documentElement).appendChild(s);
+          }
+          inject();
+          new MutationObserver(inject).observe(document.documentElement,{childList:true,subtree:true});
+        })();
+    """.trimIndent()
 }

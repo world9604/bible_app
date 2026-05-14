@@ -43,7 +43,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -288,16 +292,26 @@ private fun ChapterContent(
             val isSelected = verse.number in selected
             val annotation = annotations[verse.number]
             val highlight = annotation?.highlight
-            val bg = when {
+            val highlightBg = when {
                 isSelected -> colors.selection
                 highlight != null -> colors.highlightOf(highlight)
                 else -> Color.Transparent
             }
+            val verseSpan = SpanStyle(
+                background = highlightBg,
+                color = colors.verseNumber,
+                fontFamily = typo.numberFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                letterSpacing = 0.5.sp,
+            )
+            val bodySpan = SpanStyle(
+                background = highlightBg,
+                color = colors.onSurface,
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(bg)
                     .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() },
@@ -316,16 +330,11 @@ private fun ChapterContent(
                         ),
                 )
                 Text(
-                    text = "${verse.number}",
-                    style = typo.verseNumber,
-                    color = colors.verseNumber,
-                    modifier = Modifier
-                        .padding(top = 2.dp, end = 10.dp),
-                )
-                Text(
-                    text = verse.text,
+                    text = buildAnnotatedString {
+                        withStyle(verseSpan) { append("${verse.number}  ") }
+                        withStyle(bodySpan) { append(verse.text) }
+                    },
                     style = typo.body,
-                    color = colors.onSurface,
                     modifier = Modifier.weight(1f),
                 )
                 if (annotation?.memo?.isNotBlank() == true) {
@@ -443,7 +452,7 @@ private fun SelectionActionBar(
                     modifier = Modifier.weight(1f),
                 )
                 ActionPill(
-                    glyph = AppGlyphs.Share,
+                    glyph = AppGlyphs.Mail,
                     label = "카드",
                     active = false,
                     onClick = onShare,

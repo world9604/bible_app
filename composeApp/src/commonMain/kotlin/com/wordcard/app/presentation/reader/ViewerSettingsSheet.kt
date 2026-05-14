@@ -168,65 +168,114 @@ private fun PillSliderRow(
     val total = (range.last - range.first).coerceAtLeast(1)
     val frac = ((value - range.first).toFloat() / total).coerceIn(0f, 1f)
 
-    BoxWithConstraints(
+    Row(
         modifier = Modifier
             .padding(horizontal = 20.dp, vertical = 6.dp)
             .fillMaxWidth()
-            .height(60.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(colors.selection)
-            .pointerInput(range) {
-                awaitEachGesture {
-                    val down = awaitFirstDown()
-                    val widthPx = size.width.toFloat()
-                    fun set(x: Float) {
-                        val f = (x / widthPx).coerceIn(0f, 1f)
-                        val newVal = range.first + (f * total).roundToInt()
-                        onChange(newVal.coerceIn(range.first, range.last))
-                    }
-                    set(down.position.x)
-                    down.consume()
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        val change = event.changes.first()
-                        if (!change.pressed) break
-                        set(change.position.x)
-                        change.consume()
-                    }
-                }
-            },
+            .height(60.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(maxWidth * frac)
-                .background(colors.onSurfaceMuted.copy(alpha = 0.28f))
+        StepperButton(
+            symbol = "−",
+            enabled = value > range.first,
+            onClick = { onChange((value - 1).coerceAtLeast(range.first)) },
         )
-        Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Spacer(Modifier.width(8.dp))
+        BoxWithConstraints(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(16.dp))
+                .background(colors.selection)
+                .pointerInput(range) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown()
+                        val widthPx = size.width.toFloat()
+                        fun set(x: Float) {
+                            val f = (x / widthPx).coerceIn(0f, 1f)
+                            val newVal = range.first + (f * total).roundToInt()
+                            onChange(newVal.coerceIn(range.first, range.last))
+                        }
+                        set(down.position.x)
+                        down.consume()
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.first()
+                            if (!change.pressed) break
+                            set(change.position.x)
+                            change.consume()
+                        }
+                    }
+                },
         ) {
-            Text(
-                text = icon,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = colors.onSurface,
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(maxWidth * frac)
+                    .background(colors.onSurfaceMuted.copy(alpha = 0.28f))
             )
-            Spacer(Modifier.width(10.dp))
-            Text(
-                text = label,
-                fontSize = 14.sp,
-                color = colors.onSurface,
-            )
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = if (value > 0) "+$value" else value.toString(),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = colors.onSurface,
-                textAlign = TextAlign.End,
-            )
+            Row(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = icon,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.onSurface,
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = label,
+                    fontSize = 14.sp,
+                    color = colors.onSurface,
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = if (value > 0) "+$value" else value.toString(),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.onSurface,
+                    textAlign = TextAlign.End,
+                )
+            }
         }
+        Spacer(Modifier.width(8.dp))
+        StepperButton(
+            symbol = "+",
+            enabled = value < range.last,
+            onClick = { onChange((value + 1).coerceAtMost(range.last)) },
+        )
+    }
+}
+
+@Composable
+private fun StepperButton(
+    symbol: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val colors = LocalReaderColors.current
+    val fg = if (enabled) colors.onSurface else colors.onSurfaceMuted.copy(alpha = 0.4f)
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(colors.selection)
+            .clickable(
+                enabled = enabled,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = symbol,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = fg,
+        )
     }
 }
 
