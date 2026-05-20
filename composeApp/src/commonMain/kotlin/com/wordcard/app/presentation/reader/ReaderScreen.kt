@@ -42,8 +42,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -297,18 +302,28 @@ private fun ChapterContent(
                 highlight != null -> colors.highlightOf(highlight)
                 else -> Color.Transparent
             }
+            // Verse number is never highlighted; body glyphs are painted via
+            // a custom drawBehind below so the band hugs the glyphs with
+            // uniform padding on all four sides, independent of lineHeight.
             val verseSpan = SpanStyle(
-                background = highlightBg,
                 color = colors.verseNumber,
                 fontFamily = typo.numberFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
                 letterSpacing = 0.5.sp,
             )
-            val bodySpan = SpanStyle(
-                background = highlightBg,
-                color = colors.onSurface,
-            )
+            val bodySpan = SpanStyle(color = colors.onSurface)
+            val numberPrefix = "${verse.number}  "
+            val annotatedText = buildAnnotatedString {
+                withStyle(verseSpan) { append(numberPrefix) }
+                withStyle(bodySpan) { append(verse.text) }
+            }
+            val bodyStart = numberPrefix.length
+            val bodyEnd = annotatedText.length
+            var textLayout by remember(annotatedText) {
+                mutableStateOf<TextLayoutResult?>(null)
+            }
+            val fontSizeSp = typo.body.fontSize
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -330,12 +345,65 @@ private fun ChapterContent(
                         ),
                 )
                 Text(
-                    text = buildAnnotatedString {
-                        withStyle(verseSpan) { append("${verse.number}  ") }
-                        withStyle(bodySpan) { append(verse.text) }
-                    },
+                    text = annotatedText,
                     style = typo.body,
-                    modifier = Modifier.weight(1f),
+                    onTextLayout = { textLayout = it },
+                    modifier = Modifier
+                        .weight(1f)
+                        .drawBehind {
+                            val layout = textLayout ?: return@drawBehind
+                            if (highlightBg == Color.Transparent) return@drawBehind
+                            if (bodyStart >= bodyEnd) return@drawBehind
+
+                            val padH = 4.dp.toPx()
+                            val padTop = 2.dp.toPx()
+                            val padBottom = 5.dp.toPx()
+                            val corner = 3.dp.toPx()
+                            val fontPx = fontSizeSp.toPx()
+
+                            val startLine = layout.getLineForOffset(bodyStart)
+                            val endLine =
+                                layout.getLineForOffset((bodyEnd - 1).coerceAtLeast(bodyStart))
+                            for (line in startLine..endLine) {
+                                val lineFirstOff =
+                                    if (line == startLine) bodyStart else layout.getLineStart(line)
+                                val lineLastOff =
+                                    if (line == endLine) bodyEnd
+                                    else layout.getLineEnd(line, visibleEnd = true)
+                                if (lineFirstOff >= lineLastOff) continue
+
+                                val firstBox = layout.getBoundingBox(lineFirstOff)
+                                val lastBox =
+                                    layout.getBoundingBox(
+                                        (lineLastOff - 1).coerceAtLeast(lineFirstOff)
+                                    )
+
+                                // Anchor the band to the baseline so every
+                                // line — first, wrapped, or last — sits at the
+                                // same offset relative to its glyph. Using
+                                // lineTop/lineBottom drifts because Compose
+                                // distributes leading differently across lines.
+                                val baseline =
+                                    layout.multiParagraph.getLineBaseline(line)
+                                val glyphTop = baseline - fontPx * 0.80f
+                                val glyphBottom = baseline + fontPx * 0.18f
+
+                                val left = firstBox.left - padH
+                                val right = lastBox.right + padH
+                                val top = glyphTop - padTop
+                                val bottom = glyphBottom + padBottom
+
+                                drawRoundRect(
+                                    color = highlightBg,
+                                    topLeft = Offset(left, top),
+                                    size = Size(
+                                        (right - left).coerceAtLeast(0f),
+                                        (bottom - top).coerceAtLeast(0f),
+                                    ),
+                                    cornerRadius = CornerRadius(corner, corner),
+                                )
+                            }
+                        },
                 )
                 if (annotation?.memo?.isNotBlank() == true) {
                     Text(
