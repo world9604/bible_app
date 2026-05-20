@@ -385,8 +385,11 @@ private fun ChapterContent(
                                 // distributes leading differently across lines.
                                 val baseline =
                                     layout.multiParagraph.getLineBaseline(line)
-                                val glyphTop = baseline - fontPx * 0.80f
-                                val glyphBottom = baseline + fontPx * 0.18f
+                                // Small upward nudge so the band sits a touch
+                                // higher around the glyphs.
+                                val bandShiftUp = 2.dp.toPx()
+                                val glyphTop = baseline - fontPx * 0.80f - bandShiftUp
+                                val glyphBottom = baseline + fontPx * 0.18f - bandShiftUp
 
                                 val left = firstBox.left - padH
                                 val right = lastBox.right + padH
