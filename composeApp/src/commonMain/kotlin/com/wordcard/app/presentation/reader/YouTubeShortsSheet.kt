@@ -1,5 +1,7 @@
 package com.wordcard.app.presentation.reader
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
@@ -7,13 +9,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +37,12 @@ fun YouTubeShortsSheet(
 ) {
     val colors = LocalReaderColors.current
     val url = remember(bookName, chapter) { buildShortsSearchUrl(bookName, chapter) }
+    var rawProgress by remember(url) { mutableFloatStateOf(0f) }
+    val animatedProgress by animateFloatAsState(
+        targetValue = rawProgress,
+        animationSpec = tween(durationMillis = 200),
+        label = "youtube-progress",
+    )
 
     BottomSheetScaffold(onDismiss = onDismiss) {
         Column(modifier = Modifier.fillMaxSize().padding(top = 12.dp).navigationBarsPadding()) {
@@ -59,10 +73,20 @@ fun YouTubeShortsSheet(
                 )
             }
 
+            if (rawProgress < 1f) {
+                LinearProgressIndicator(
+                    progress = { animatedProgress },
+                    modifier = Modifier.fillMaxWidth().height(2.dp),
+                    color = colors.accent,
+                    trackColor = Color.Transparent,
+                )
+            }
+
             PlatformWebView(
                 url = url,
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 injectedCss = HIDE_NON_SHORTS_TABS_CSS,
+                onProgressChange = { rawProgress = it },
             )
         }
     }

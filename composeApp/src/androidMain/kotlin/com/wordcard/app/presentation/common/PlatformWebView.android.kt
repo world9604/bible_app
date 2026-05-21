@@ -12,7 +12,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 
 @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
 @Composable
-actual fun PlatformWebView(url: String, modifier: Modifier, injectedCss: String?) {
+actual fun PlatformWebView(
+    url: String,
+    modifier: Modifier,
+    injectedCss: String?,
+    onProgressChange: ((Float) -> Unit)?,
+) {
     AndroidView(
         modifier = modifier,
         factory = { context ->
@@ -38,14 +43,25 @@ actual fun PlatformWebView(url: String, modifier: Modifier, injectedCss: String?
                     false
                 }
                 webViewClient = object : WebViewClient() {
+                    override fun onPageStarted(view: WebView, startedUrl: String?, favicon: android.graphics.Bitmap?) {
+                        super.onPageStarted(view, startedUrl, favicon)
+                        onProgressChange?.invoke(0f)
+                    }
+
                     override fun onPageFinished(view: WebView, finishedUrl: String?) {
                         super.onPageFinished(view, finishedUrl)
                         injectedCss?.let { css ->
                             view.evaluateJavascript(buildCssInjectionScript(css), null)
                         }
+                        onProgressChange?.invoke(1f)
                     }
                 }
-                webChromeClient = WebChromeClient()
+                webChromeClient = object : WebChromeClient() {
+                    override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                        super.onProgressChanged(view, newProgress)
+                        onProgressChange?.invoke(newProgress / 100f)
+                    }
+                }
                 loadUrl(url)
             }
         },

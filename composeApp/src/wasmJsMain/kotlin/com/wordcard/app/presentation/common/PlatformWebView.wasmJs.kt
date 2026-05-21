@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -12,10 +13,16 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLIFrameElement
 
 @Composable
-actual fun PlatformWebView(url: String, modifier: Modifier, injectedCss: String?) {
+actual fun PlatformWebView(
+    url: String,
+    modifier: Modifier,
+    injectedCss: String?,
+    onProgressChange: ((Float) -> Unit)?,
+) {
     // injectedCss is ignored on web: m.youtube.com is cross-origin, so its
     // DOM is not accessible from the host iframe.
     val density = LocalDensity.current.density
+    val onProgressState = rememberUpdatedState(onProgressChange)
     val iframe = remember {
         (document.createElement("iframe") as HTMLIFrameElement).apply {
             style.position = "absolute"
@@ -23,6 +30,7 @@ actual fun PlatformWebView(url: String, modifier: Modifier, injectedCss: String?
             style.zIndex = "1000"
             setAttribute("allow", "autoplay; encrypted-media; picture-in-picture; fullscreen")
             setAttribute("allowfullscreen", "true")
+            addEventListener("load", { _ -> onProgressState.value?.invoke(1f) })
         }
     }
 
@@ -32,6 +40,7 @@ actual fun PlatformWebView(url: String, modifier: Modifier, injectedCss: String?
     }
 
     DisposableEffect(url) {
+        onProgressState.value?.invoke(0f)
         iframe.src = url
         onDispose { }
     }
