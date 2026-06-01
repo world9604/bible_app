@@ -45,3 +45,53 @@ SELECT * FROM ReadingPositionEntity WHERE id = 1;
 upsertReadingPosition:
 INSERT OR REPLACE INTO ReadingPositionEntity (id, book_id, chapter, verse)
 VALUES (1, ?, ?, ?);
+
+-- AI-generated commentary -----------------------------------------------------
+-- One row per chapter. Generated offline with claude-opus-4-7 and seeded into
+-- the database on first launch from a bundled JSON file.
+
+CREATE TABLE ChapterCommentaryEntity (
+    book_id TEXT NOT NULL,
+    chapter INTEGER NOT NULL,
+    summary TEXT NOT NULL,
+    content TEXT NOT NULL,
+    model TEXT NOT NULL,
+    generated_at TEXT NOT NULL,
+    PRIMARY KEY (book_id, chapter)
+);
+
+CREATE TABLE ChapterQnaEntity (
+    book_id TEXT NOT NULL,
+    chapter INTEGER NOT NULL,
+    ordinal INTEGER NOT NULL,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    PRIMARY KEY (book_id, chapter, ordinal)
+);
+
+CREATE INDEX chapter_qna_lookup_idx
+    ON ChapterQnaEntity (book_id, chapter);
+
+selectCommentaryForChapter:
+SELECT * FROM ChapterCommentaryEntity WHERE book_id = ? AND chapter = ?;
+
+upsertCommentary:
+INSERT OR REPLACE INTO ChapterCommentaryEntity (
+    book_id, chapter, summary, content, model, generated_at
+) VALUES (?, ?, ?, ?, ?, ?);
+
+countCommentaries:
+SELECT COUNT(*) FROM ChapterCommentaryEntity;
+
+selectQnaForChapter:
+SELECT * FROM ChapterQnaEntity
+WHERE book_id = ? AND chapter = ?
+ORDER BY ordinal ASC;
+
+deleteQnaForChapter:
+DELETE FROM ChapterQnaEntity WHERE book_id = ? AND chapter = ?;
+
+insertQna:
+INSERT INTO ChapterQnaEntity (
+    book_id, chapter, ordinal, question, answer
+) VALUES (?, ?, ?, ?, ?);

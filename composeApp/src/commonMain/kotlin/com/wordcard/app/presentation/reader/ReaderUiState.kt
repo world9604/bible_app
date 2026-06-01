@@ -2,6 +2,7 @@ package com.wordcard.app.presentation.reader
 
 import com.wordcard.app.domain.model.Book
 import com.wordcard.app.domain.model.Chapter
+import com.wordcard.app.domain.model.ChapterCommentary
 import com.wordcard.app.domain.model.Verse
 import com.wordcard.app.domain.model.VerseAnnotation
 
@@ -12,6 +13,7 @@ data class ReaderUiState(
     val currentChapter: Chapter? = null,
     val selectedVerseNumbers: Set<Int> = emptySet(),
     val annotations: Map<Int, VerseAnnotation> = emptyMap(),
+    val commentary: ChapterCommentary? = null,
     val showBookPicker: Boolean = false,
     val showChapterPicker: Boolean = false,
     val showShareCard: Boolean = false,

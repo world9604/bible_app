@@ -2,18 +2,24 @@ package com.wordcard.app.di
 
 import com.wordcard.app.data.local.DatabaseDriverFactory
 import com.wordcard.app.data.repository.BibleRepositoryImpl
+import com.wordcard.app.data.repository.InMemoryChapterCommentaryRepository
 import com.wordcard.app.data.repository.InMemoryReadingPositionRepository
 import com.wordcard.app.data.repository.InMemoryVerseAnnotationRepository
+import com.wordcard.app.data.repository.SqlDelightChapterCommentaryRepository
 import com.wordcard.app.data.repository.SqlDelightReadingPositionRepository
 import com.wordcard.app.data.repository.SqlDelightVerseAnnotationRepository
 import com.wordcard.app.data.source.BibleDataSource
+import com.wordcard.app.data.source.BundledCommentaryDataSource
+import com.wordcard.app.data.source.CommentaryDataSource
 import com.wordcard.app.data.source.KrvBibleDataSource
 import com.wordcard.app.database.BibleDatabase
 import com.wordcard.app.domain.repository.BibleRepository
+import com.wordcard.app.domain.repository.ChapterCommentaryRepository
 import com.wordcard.app.domain.repository.ReadingPositionRepository
 import com.wordcard.app.domain.repository.VerseAnnotationRepository
 import com.wordcard.app.domain.usecase.GetBooksUseCase
 import com.wordcard.app.domain.usecase.GetChapterUseCase
+import com.wordcard.app.domain.usecase.ObserveChapterCommentaryUseCase
 import com.wordcard.app.domain.usecase.ObserveReadingPositionUseCase
 import com.wordcard.app.domain.usecase.SaveReadingPositionUseCase
 import com.wordcard.app.presentation.reader.ReaderViewModel
@@ -28,6 +34,7 @@ private class DatabaseHolder(val database: BibleDatabase?)
 
 private val dataModule: Module = module {
     single<BibleDataSource> { KrvBibleDataSource() }
+    single<CommentaryDataSource> { BundledCommentaryDataSource() }
     single<BibleRepository> { BibleRepositoryImpl(get()) }
 
     // Persistence wiring: build the driver once, share the database across repositories,
@@ -46,6 +53,11 @@ private val dataModule: Module = module {
             ?.let { SqlDelightVerseAnnotationRepository(it) }
             ?: InMemoryVerseAnnotationRepository()
     }
+    single<ChapterCommentaryRepository> {
+        get<DatabaseHolder>().database
+            ?.let { SqlDelightChapterCommentaryRepository(it, get()) }
+            ?: InMemoryChapterCommentaryRepository(get())
+    }
 }
 
 private val domainModule: Module = module {
@@ -53,6 +65,7 @@ private val domainModule: Module = module {
     factory { GetChapterUseCase(get()) }
     factory { ObserveReadingPositionUseCase(get()) }
     factory { SaveReadingPositionUseCase(get()) }
+    factory { ObserveChapterCommentaryUseCase(get()) }
 }
 
 private val presentationModule: Module = module {

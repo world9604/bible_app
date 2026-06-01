@@ -36,3 +36,7 @@ Thumbs.db
 # Misc
 *.log
 *.tmp
+
+# build-scripts caches
+build-scripts/.cache/
+build-scripts/.commentary_cache/

@@ -56,6 +56,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wordcard.app.domain.model.ChapterCommentary
 import com.wordcard.app.domain.model.Verse
 import com.wordcard.app.presentation.common.AppGlyphs
 import com.wordcard.app.presentation.theme.LocalReaderColors
@@ -98,6 +99,7 @@ fun ReaderScreen(
                             verses = state.currentChapter!!.verses,
                             selected = state.selectedVerseNumbers,
                             annotations = state.annotations,
+                            commentary = state.commentary,
                             onToggle = viewModel::toggleVerse,
                             onOpenMemo = { viewModel.openMemoEditor(it) },
                             settings = viewerSettings,
@@ -271,6 +273,7 @@ private fun ChapterContent(
     verses: List<Verse>,
     selected: Set<Int>,
     annotations: Map<Int, com.wordcard.app.domain.model.VerseAnnotation>,
+    commentary: ChapterCommentary?,
     onToggle: (Int) -> Unit,
     onOpenMemo: (Int) -> Unit,
     settings: ViewerSettings,
@@ -426,8 +429,126 @@ private fun ChapterContent(
                 }
             }
         }
+        if (commentary != null) {
+            item(key = "commentary-${commentary.bookId}-${commentary.chapter}") {
+                CommentarySection(commentary = commentary)
+            }
+        }
         item {
             Spacer(Modifier.height(120.dp))
+        }
+    }
+}
+
+@Composable
+private fun CommentarySection(commentary: ChapterCommentary) {
+    val colors = LocalReaderColors.current
+    val typo = LocalReaderTypography.current
+    var expanded by remember(commentary.bookId, commentary.chapter) { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 28.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.selection)
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "AI 해설",
+                style = typo.title,
+                color = colors.onSurface,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = if (expanded) "접기" else "펼치기",
+                style = typo.chrome.copy(fontSize = 12.sp),
+                color = colors.onSurfaceMuted,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) { expanded = !expanded }
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = commentary.summary,
+            style = typo.body.copy(fontSize = 14.sp, lineHeight = 22.sp),
+            color = colors.onSurface,
+        )
+        if (expanded) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = commentary.body,
+                style = typo.body.copy(fontSize = 14.sp, lineHeight = 24.sp),
+                color = colors.onSurface,
+            )
+            if (commentary.qna.isNotEmpty()) {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = "자주 묻는 질문",
+                    style = typo.title.copy(fontSize = 15.sp),
+                    color = colors.onSurface,
+                )
+                Spacer(Modifier.height(8.dp))
+                commentary.qna.forEach { qna ->
+                    QnaItem(question = qna.question, answer = qna.answer)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QnaItem(question: String, answer: String) {
+    val colors = LocalReaderColors.current
+    val typo = LocalReaderTypography.current
+    var open by remember(question) { mutableStateOf(false) }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+            ) { open = !open }
+            .padding(vertical = 8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Text(
+                text = "Q.",
+                style = typo.title.copy(fontSize = 13.sp),
+                color = colors.verseNumber,
+                modifier = Modifier.padding(end = 6.dp),
+            )
+            Text(
+                text = question,
+                style = typo.body.copy(fontSize = 14.sp, lineHeight = 22.sp),
+                color = colors.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (open) {
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.Top) {
+                Text(
+                    text = "A.",
+                    style = typo.title.copy(fontSize = 13.sp),
+                    color = colors.onSurfaceMuted,
+                    modifier = Modifier.padding(end = 6.dp),
+                )
+                Text(
+                    text = answer,
+                    style = typo.body.copy(fontSize = 14.sp, lineHeight = 22.sp),
+                    color = colors.onSurfaceMuted,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }

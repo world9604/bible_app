@@ -7,6 +7,7 @@ import com.wordcard.app.domain.model.ReadingPosition
 import com.wordcard.app.domain.repository.VerseAnnotationRepository
 import com.wordcard.app.domain.usecase.GetBooksUseCase
 import com.wordcard.app.domain.usecase.GetChapterUseCase
+import com.wordcard.app.domain.usecase.ObserveChapterCommentaryUseCase
 import com.wordcard.app.domain.usecase.ObserveReadingPositionUseCase
 import com.wordcard.app.domain.usecase.SaveReadingPositionUseCase
 import kotlinx.coroutines.Job
@@ -23,12 +24,14 @@ class ReaderViewModel(
     private val observePosition: ObserveReadingPositionUseCase,
     private val savePosition: SaveReadingPositionUseCase,
     private val annotations: VerseAnnotationRepository,
+    private val observeCommentaryUseCase: ObserveChapterCommentaryUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ReaderUiState())
     val state: StateFlow<ReaderUiState> = _state.asStateFlow()
 
     private var annotationJob: Job? = null
+    private var commentaryJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -44,6 +47,7 @@ class ReaderViewModel(
             )
             if (book != null && chapter != null) {
                 observeAnnotations(book.id, chapter.number)
+                observeCommentary(book.id, chapter.number)
             }
         }
     }
@@ -53,6 +57,15 @@ class ReaderViewModel(
         annotationJob = viewModelScope.launch {
             annotations.observe(bookId, chapter).collect { map ->
                 _state.update { it.copy(annotations = map) }
+            }
+        }
+    }
+
+    private fun observeCommentary(bookId: String, chapter: Int) {
+        commentaryJob?.cancel()
+        commentaryJob = viewModelScope.launch {
+            observeCommentaryUseCase(bookId, chapter).collect { commentary ->
+                _state.update { it.copy(commentary = commentary) }
             }
         }
     }
@@ -68,11 +81,13 @@ class ReaderViewModel(
                     currentChapter = chapter,
                     selectedVerseNumbers = emptySet(),
                     annotations = emptyMap(),
+                    commentary = null,
                     showBookPicker = false,
                     showChapterPicker = false,
                 )
             }
             observeAnnotations(book.id, 1)
+            observeCommentary(book.id, 1)
         }
     }
 
@@ -86,10 +101,12 @@ class ReaderViewModel(
                     currentChapter = chapter,
                     selectedVerseNumbers = emptySet(),
                     annotations = emptyMap(),
+                    commentary = null,
                     showChapterPicker = false,
                 )
             }
             observeAnnotations(book.id, chapterNumber)
+            observeCommentary(book.id, chapterNumber)
         }
     }
 
@@ -104,11 +121,13 @@ class ReaderViewModel(
                     currentChapter = chapter,
                     selectedVerseNumbers = emptySet(),
                     annotations = emptyMap(),
+                    commentary = null,
                     showBookPicker = false,
                     showChapterPicker = false,
                 )
             }
             observeAnnotations(book.id, chapterNumber)
+            observeCommentary(book.id, chapterNumber)
         }
     }
 
