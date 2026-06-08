@@ -4,6 +4,7 @@ import com.wordcard.app.data.source.CommentaryDataSource
 import com.wordcard.app.domain.model.ChapterCommentary
 import com.wordcard.app.domain.model.ChapterQna
 import com.wordcard.app.domain.repository.ChapterCommentaryRepository
+import kotlin.concurrent.Volatile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow

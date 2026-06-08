@@ -72,6 +72,7 @@ fun ReaderScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val readerColors = LocalReaderColors.current
     var showYouTubeShorts by remember { mutableStateOf(false) }
+    var showCommentary by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -81,8 +82,10 @@ fun ReaderScreen(
             ReaderTopBar(
                 bookName = state.currentBook?.name ?: "",
                 chapter = state.currentChapter?.number,
+                hasCommentary = state.commentary != null,
                 onBack = viewModel::openBookPicker,
                 onTitleClick = viewModel::openChapterPicker,
+                onOpenCommentary = { showCommentary = true },
                 onOpenYouTubeShorts = { showYouTubeShorts = true },
                 onOpenSettings = onOpenSettings,
             )
@@ -102,6 +105,7 @@ fun ReaderScreen(
                             commentary = state.commentary,
                             onToggle = viewModel::toggleVerse,
                             onOpenMemo = { viewModel.openMemoEditor(it) },
+                            onOpenCommentary = { showCommentary = true },
                             settings = viewerSettings,
                         )
                     }
@@ -173,6 +177,16 @@ fun ReaderScreen(
             )
         }
 
+        if (showCommentary && state.commentary != null && state.currentBook != null) {
+            CommentarySheet(
+                bookName = state.currentBook!!.name,
+                chapter = state.commentary!!.chapter,
+                commentary = state.commentary!!,
+                baseFontSizeSp = (viewerSettings.fontSizeSp - 3f).coerceIn(13f, 19f),
+                onDismiss = { showCommentary = false },
+            )
+        }
+
         if (showYouTubeShorts && state.currentBook != null && state.currentChapter != null) {
             YouTubeShortsSheet(
                 bookName = state.currentBook!!.name,
@@ -203,8 +217,10 @@ fun ReaderScreen(
 private fun ReaderTopBar(
     bookName: String,
     chapter: Int?,
+    hasCommentary: Boolean,
     onBack: () -> Unit,
     onTitleClick: () -> Unit,
+    onOpenCommentary: () -> Unit,
     onOpenYouTubeShorts: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -240,6 +256,21 @@ private fun ReaderTopBar(
             )
         }
         Spacer(Modifier.weight(1f))
+        if (hasCommentary) {
+            Text(
+                text = AppGlyphs.Commentary,
+                fontFamily = typo.iconFontFamily,
+                fontSize = 20.sp,
+                color = colors.verseNumber,
+                modifier = Modifier
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) { onOpenCommentary() }
+                    .padding(horizontal = 4.dp, vertical = 6.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+        }
         Text(
             text = AppGlyphs.Shorts,
             fontSize = 18.sp,
@@ -276,6 +307,7 @@ private fun ChapterContent(
     commentary: ChapterCommentary?,
     onToggle: (Int) -> Unit,
     onOpenMemo: (Int) -> Unit,
+    onOpenCommentary: () -> Unit,
     settings: ViewerSettings,
 ) {
     val listState = rememberLazyListState()
@@ -431,7 +463,7 @@ private fun ChapterContent(
         }
         if (commentary != null) {
             item(key = "commentary-${commentary.bookId}-${commentary.chapter}") {
-                CommentarySection(commentary = commentary)
+                CommentaryTeaserCard(commentary = commentary, onOpen = onOpenCommentary)
             }
         }
         item {
@@ -440,116 +472,55 @@ private fun ChapterContent(
     }
 }
 
+/**
+ * Compact entry point shown after the last verse: a teaser of the chapter
+ * commentary that opens the full [CommentarySheet] on tap.
+ */
 @Composable
-private fun CommentarySection(commentary: ChapterCommentary) {
+private fun CommentaryTeaserCard(commentary: ChapterCommentary, onOpen: () -> Unit) {
     val colors = LocalReaderColors.current
     val typo = LocalReaderTypography.current
-    var expanded by remember(commentary.bookId, commentary.chapter) { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 28.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(colors.selection)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+            ) { onOpen() }
             .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
+                text = AppGlyphs.Commentary,
+                fontFamily = typo.iconFontFamily,
+                fontSize = 18.sp,
+                color = colors.verseNumber,
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
                 text = "AI 해설",
-                style = typo.title,
+                style = typo.title.copy(fontWeight = FontWeight.Bold),
                 color = colors.onSurface,
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = if (expanded) "접기" else "펼치기",
-                style = typo.chrome.copy(fontSize = 12.sp),
-                color = colors.onSurfaceMuted,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
-                    ) { expanded = !expanded }
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                text = "전체 보기 ${AppGlyphs.ChevronRight}",
+                style = typo.chrome.copy(fontSize = 13.sp),
+                color = colors.verseNumber,
             )
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
         Text(
             text = commentary.summary,
             style = typo.body.copy(fontSize = 14.sp, lineHeight = 22.sp),
             color = colors.onSurface,
+            maxLines = 3,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
-        if (expanded) {
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = commentary.body,
-                style = typo.body.copy(fontSize = 14.sp, lineHeight = 24.sp),
-                color = colors.onSurface,
-            )
-            if (commentary.qna.isNotEmpty()) {
-                Spacer(Modifier.height(20.dp))
-                Text(
-                    text = "자주 묻는 질문",
-                    style = typo.title.copy(fontSize = 15.sp),
-                    color = colors.onSurface,
-                )
-                Spacer(Modifier.height(8.dp))
-                commentary.qna.forEach { qna ->
-                    QnaItem(question = qna.question, answer = qna.answer)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun QnaItem(question: String, answer: String) {
-    val colors = LocalReaderColors.current
-    val typo = LocalReaderTypography.current
-    var open by remember(question) { mutableStateOf(false) }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() },
-            ) { open = !open }
-            .padding(vertical = 8.dp),
-    ) {
-        Row(verticalAlignment = Alignment.Top) {
-            Text(
-                text = "Q.",
-                style = typo.title.copy(fontSize = 13.sp),
-                color = colors.verseNumber,
-                modifier = Modifier.padding(end = 6.dp),
-            )
-            Text(
-                text = question,
-                style = typo.body.copy(fontSize = 14.sp, lineHeight = 22.sp),
-                color = colors.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        if (open) {
-            Spacer(Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.Top) {
-                Text(
-                    text = "A.",
-                    style = typo.title.copy(fontSize = 13.sp),
-                    color = colors.onSurfaceMuted,
-                    modifier = Modifier.padding(end = 6.dp),
-                )
-                Text(
-                    text = answer,
-                    style = typo.body.copy(fontSize = 14.sp, lineHeight = 22.sp),
-                    color = colors.onSurfaceMuted,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
     }
 }
 

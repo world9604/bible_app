@@ -30,6 +30,9 @@ object AppGlyphs {
     /** Material Symbols Outlined `edit_note` (U+E745) — uses iconFontFamily */
     const val Note = ""
 
+    /** Material Symbols Outlined `auto_awesome` (U+E65F) — AI commentary; uses iconFontFamily */
+    const val Commentary = ""
+
     /** Material Symbols Outlined `mail` (U+E158) — uses iconFontFamily */
     const val Mail = ""
 }
