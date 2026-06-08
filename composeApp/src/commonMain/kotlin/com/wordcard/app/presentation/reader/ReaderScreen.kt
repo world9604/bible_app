@@ -82,12 +82,8 @@ fun ReaderScreen(
             ReaderTopBar(
                 bookName = state.currentBook?.name ?: "",
                 chapter = state.currentChapter?.number,
-                hasCommentary = state.commentary != null,
                 onBack = viewModel::openBookPicker,
                 onTitleClick = viewModel::openChapterPicker,
-                onOpenCommentary = { showCommentary = true },
-                onOpenYouTubeShorts = { showYouTubeShorts = true },
-                onOpenSettings = onOpenSettings,
             )
 
             Box(modifier = Modifier.fillMaxSize()) {
@@ -120,6 +116,10 @@ fun ReaderScreen(
                             canGoNext = chapterNum < totalChapters,
                             onPrev = viewModel::previousChapter,
                             onNext = viewModel::nextChapter,
+                            hasCommentary = state.commentary != null,
+                            onOpenCommentary = { showCommentary = true },
+                            onOpenYouTubeShorts = { showYouTubeShorts = true },
+                            onOpenSettings = onOpenSettings,
                         )
                     }
                     AnimatedVisibility(
@@ -217,85 +217,42 @@ fun ReaderScreen(
 private fun ReaderTopBar(
     bookName: String,
     chapter: Int?,
-    hasCommentary: Boolean,
     onBack: () -> Unit,
     onTitleClick: () -> Unit,
-    onOpenCommentary: () -> Unit,
-    onOpenYouTubeShorts: () -> Unit,
-    onOpenSettings: () -> Unit,
 ) {
     val colors = LocalReaderColors.current
     val typo = LocalReaderTypography.current
-    Row(
+    // Box keeps the chapter title truly centered regardless of the leading
+    // icon width; the chapter tools now live in the bottom cluster.
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = AppGlyphs.TableOfContents,
             style = typo.icon,
             color = colors.onSurface,
             modifier = Modifier
+                .align(Alignment.CenterStart)
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() },
                 ) { onBack() },
         )
-        Spacer(Modifier.weight(1f))
         if (bookName.isNotBlank() && chapter != null) {
             Text(
                 text = "$bookName ${chapter}장",
                 style = typo.topBar,
                 color = colors.onSurface,
                 modifier = Modifier
+                    .align(Alignment.Center)
                     .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() },
                     ) { onTitleClick() },
             )
         }
-        Spacer(Modifier.weight(1f))
-        if (hasCommentary) {
-            Text(
-                text = AppGlyphs.Commentary,
-                fontFamily = typo.iconFontFamily,
-                fontSize = 20.sp,
-                color = colors.verseNumber,
-                modifier = Modifier
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
-                    ) { onOpenCommentary() }
-                    .padding(horizontal = 4.dp, vertical = 6.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(
-            text = AppGlyphs.Shorts,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = colors.onSurface,
-            modifier = Modifier
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() },
-                ) { onOpenYouTubeShorts() }
-                .padding(horizontal = 4.dp, vertical = 6.dp),
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = AppGlyphs.Settings,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = colors.onSurface,
-            modifier = Modifier
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() },
-                ) { onOpenSettings() }
-                .padding(horizontal = 4.dp, vertical = 6.dp),
-        )
     }
 }
 
@@ -733,6 +690,10 @@ private fun SideChapterNavRow(
     canGoNext: Boolean,
     onPrev: () -> Unit,
     onNext: () -> Unit,
+    hasCommentary: Boolean,
+    onOpenCommentary: () -> Unit,
+    onOpenYouTubeShorts: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -747,6 +708,15 @@ private fun SideChapterNavRow(
                 onClick = onPrev,
             )
         }
+        // Chapter tools sit in the thumb-friendly bottom zone, centered between
+        // the prev/next chapter buttons.
+        BottomToolCluster(
+            modifier = Modifier.align(Alignment.Center),
+            hasCommentary = hasCommentary,
+            onOpenCommentary = onOpenCommentary,
+            onOpenYouTubeShorts = onOpenYouTubeShorts,
+            onOpenSettings = onOpenSettings,
+        )
         if (canGoNext) {
             NavCircleButton(
                 modifier = Modifier.align(Alignment.CenterEnd),
@@ -754,6 +724,82 @@ private fun SideChapterNavRow(
                 onClick = onNext,
             )
         }
+    }
+}
+
+@Composable
+private fun BottomToolCluster(
+    modifier: Modifier = Modifier,
+    hasCommentary: Boolean,
+    onOpenCommentary: () -> Unit,
+    onOpenYouTubeShorts: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    val colors = LocalReaderColors.current
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(22.dp))
+            .background(colors.selection)
+            .border(BorderStroke(1.5.dp, Color.White), RoundedCornerShape(22.dp))
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        if (hasCommentary) {
+            ToolButton(
+                glyph = AppGlyphs.Commentary,
+                useIconFont = true,
+                label = "해설",
+                onClick = onOpenCommentary,
+            )
+        }
+        ToolButton(
+            glyph = AppGlyphs.Shorts,
+            useIconFont = false,
+            label = "영상",
+            onClick = onOpenYouTubeShorts,
+        )
+        ToolButton(
+            glyph = AppGlyphs.Settings,
+            useIconFont = false,
+            label = "보기",
+            onClick = onOpenSettings,
+        )
+    }
+}
+
+@Composable
+private fun ToolButton(
+    glyph: String,
+    useIconFont: Boolean,
+    label: String,
+    onClick: () -> Unit,
+) {
+    val colors = LocalReaderColors.current
+    val typo = LocalReaderTypography.current
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+            ) { onClick() }
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = glyph,
+            fontFamily = if (useIconFont) typo.iconFontFamily else null,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = colors.onSurface,
+        )
+        Spacer(Modifier.height(1.dp))
+        Text(
+            text = label,
+            style = typo.chrome.copy(fontSize = 10.sp),
+            color = colors.onSurfaceMuted,
+        )
     }
 }
 
