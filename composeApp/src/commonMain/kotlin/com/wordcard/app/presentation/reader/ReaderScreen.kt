@@ -340,9 +340,16 @@ private fun ChapterContent(
             // Verse number is never highlighted; body glyphs are painted via
             // a custom drawBehind below so the band hugs the glyphs with
             // uniform padding on all four sides, independent of lineHeight.
+            //
+            // The number shares the body's font family on purpose: a different
+            // font on the first line gives that line different ascent/descent
+            // metrics, which makes LineHeightStyle.Center distribute leading
+            // differently there and the first→second line gap drift from every
+            // other line. Same family ⇒ identical per-line metrics ⇒ uniform
+            // spacing. Bold + italic + accent color keep the number distinct.
             val verseSpan = SpanStyle(
                 color = colors.verseNumber,
-                fontFamily = typo.numberFontFamily,
+                fontFamily = typo.serifFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
                 letterSpacing = 0.5.sp,

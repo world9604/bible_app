@@ -55,7 +55,9 @@ fun BookPickerSheet(
 ) {
     BottomSheetScaffold(onDismiss = onDismiss) {
         val colors = LocalReaderColors.current
-        var expandedBookId by remember { mutableStateOf(currentBookId) }
+        // Open with every book collapsed so the sheet just lists all books;
+        // the current chapter is not surfaced until the user expands a book.
+        var expandedBookId by remember { mutableStateOf<String?>(null) }
 
         Column(modifier = Modifier.fillMaxSize().padding(top = 12.dp).navigationBarsPadding()) {
             DragHandle()
