@@ -1,0 +1,29 @@
+-- Migration 1 -> 2: add AI commentary tables.
+--
+-- Databases created before the commentary feature only had VerseAnnotationEntity
+-- and ReadingPositionEntity. Without this migration, reading commentary throws
+-- "no such table: ChapterCommentaryEntity" on upgraded installs and crashes the
+-- app. IF NOT EXISTS keeps it safe for databases that already happen to have the
+-- tables (created from a newer .sq before any migration existed).
+
+CREATE TABLE IF NOT EXISTS ChapterCommentaryEntity (
+    book_id TEXT NOT NULL,
+    chapter INTEGER NOT NULL,
+    summary TEXT NOT NULL,
+    content TEXT NOT NULL,
+    model TEXT NOT NULL,
+    generated_at TEXT NOT NULL,
+    PRIMARY KEY (book_id, chapter)
+);
+
+CREATE TABLE IF NOT EXISTS ChapterQnaEntity (
+    book_id TEXT NOT NULL,
+    chapter INTEGER NOT NULL,
+    ordinal INTEGER NOT NULL,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    PRIMARY KEY (book_id, chapter, ordinal)
+);
+
+CREATE INDEX IF NOT EXISTS chapter_qna_lookup_idx
+    ON ChapterQnaEntity (book_id, chapter);

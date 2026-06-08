@@ -10,6 +10,7 @@ import com.wordcard.app.domain.repository.ChapterCommentaryRepository
 import kotlin.concurrent.Volatile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -60,60 +61,70 @@ class SqlDelightChapterCommentaryRepository(
                     }
                 }
         )
+    }.catch {
+        // A commentary failure (e.g. an un-migrated DB missing the table, or a
+        // corrupt bundle) must degrade to "no commentary" rather than crash the
+        // app via an unhandled exception in the collecting coroutine.
+        emit(null)
     }
 
     override suspend fun get(bookId: String, chapter: Int): ChapterCommentary? =
         withContext(Dispatchers.Default) {
-            ensureSeeded()
-            val row = queries.selectCommentaryForChapter(bookId, chapter.toLong())
-                .executeAsOneOrNull() ?: return@withContext null
-            val qna = queries.selectQnaForChapter(row.book_id, row.chapter)
-                .executeAsList()
-                .map { ChapterQna(it.ordinal.toInt(), it.question, it.answer) }
-            ChapterCommentary(
-                bookId = row.book_id,
-                chapter = row.chapter.toInt(),
-                summary = row.summary,
-                body = row.content,
-                qna = qna,
-                model = row.model,
-                generatedAt = row.generated_at,
-            )
+            runCatching {
+                ensureSeeded()
+                val row = queries.selectCommentaryForChapter(bookId, chapter.toLong())
+                    .executeAsOneOrNull() ?: return@runCatching null
+                val qna = queries.selectQnaForChapter(row.book_id, row.chapter)
+                    .executeAsList()
+                    .map { ChapterQna(it.ordinal.toInt(), it.question, it.answer) }
+                ChapterCommentary(
+                    bookId = row.book_id,
+                    chapter = row.chapter.toInt(),
+                    summary = row.summary,
+                    body = row.content,
+                    qna = qna,
+                    model = row.model,
+                    generatedAt = row.generated_at,
+                )
+            }.getOrNull()
         }
 
     private suspend fun ensureSeeded() {
         if (seeded) return
         seedMutex.withLock {
             if (seeded) return
-            val file = source.loadAll()
-            if (file != null) {
-                val existing = queries.countCommentaries().executeAsOne()
-                if (existing < file.entries.size) {
-                    queries.transaction {
-                        file.entries.forEach { entry ->
-                            queries.upsertCommentary(
-                                book_id = entry.bookId,
-                                chapter = entry.chapter.toLong(),
-                                summary = entry.summary,
-                                content = entry.body,
-                                model = file.model,
-                                generated_at = entry.generatedAt,
-                            )
-                            queries.deleteQnaForChapter(entry.bookId, entry.chapter.toLong())
-                            entry.qna.forEachIndexed { index, qna ->
-                                queries.insertQna(
-                                    book_id = entry.bookId,
-                                    chapter = entry.chapter.toLong(),
-                                    ordinal = index.toLong(),
-                                    question = qna.q,
-                                    answer = qna.a,
-                                )
-                            }
-                        }
-                    }
+            runCatching { seedFromBundle() }
+            // Mark as attempted regardless: a transient seed failure should not
+            // wedge every future read into retrying (and re-throwing) forever.
+            seeded = true
+        }
+    }
+
+    private suspend fun seedFromBundle() {
+        val file = source.loadAll() ?: return
+        val existing = queries.countCommentaries().executeAsOne()
+        if (existing >= file.entries.size) return
+        queries.transaction {
+            file.entries.forEach { entry ->
+                queries.upsertCommentary(
+                    book_id = entry.bookId,
+                    chapter = entry.chapter.toLong(),
+                    summary = entry.summary,
+                    content = entry.body,
+                    model = file.model,
+                    generated_at = entry.generatedAt,
+                )
+                queries.deleteQnaForChapter(entry.bookId, entry.chapter.toLong())
+                entry.qna.forEachIndexed { index, qna ->
+                    queries.insertQna(
+                        book_id = entry.bookId,
+                        chapter = entry.chapter.toLong(),
+                        ordinal = index.toLong(),
+                        question = qna.q,
+                        answer = qna.a,
+                    )
                 }
             }
-            seeded = true
         }
     }
 }
